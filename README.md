@@ -1,4 +1,4 @@
-# aws-gcr-solutions-init-ts-repo
+# aws-gcr-solutions-intelligent-captcha
 
 ## How to use?
 

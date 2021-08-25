@@ -1,10 +1,10 @@
 import { App } from '@aws-cdk/core';
 import { BootstraplessStackSynthesizer } from 'cdk-bootstrapless-synthesizer';
-import { MyStack } from './stack';
+import { IntelligentCaptchaStack } from './stack';
 
 const app = new App();
 
-new MyStack(app, 'MyStack', { synthesizer: newSynthesizer() });
+new IntelligentCaptchaStack(app, 'IntelligentCaptchaStack', { synthesizer: newSynthesizer() });
 
 app.synth();
 

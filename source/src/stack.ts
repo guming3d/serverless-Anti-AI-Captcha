@@ -7,6 +7,7 @@ import {ManagedPolicy} from "@aws-cdk/aws-iam";
 import * as cdk from '@aws-cdk/core';
 import {CorsHttpMethod, HttpApi, HttpMethod} from "@aws-cdk/aws-apigatewayv2";
 import * as apiGatewayIntegrations from '@aws-cdk/aws-apigatewayv2-integrations';
+import * as logs from '@aws-cdk/aws-logs';
 
 export class SolutionStack extends Stack {
   private _paramGroup: { [grpname: string]: CfnParameter[]} = {}
@@ -42,8 +43,13 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     this.setDescription("(SO####) - Intelligent Captcha stack.");
 
+    const maxDailyIndex = new CfnParameter(this, 'MaxDailyCaptchaNumber', {
+      description: 'Max number of Captcha to be generated each day',
+      type: 'Number',
+      default: 20,
+    })
 
-    // 👇 create our HTTP Api
+    //  create our HTTP Api
     const httpApi = new HttpApi(this, 'http-api-captcha', {
       description: 'HTTP API for getting captcha',
       corsPreflight: {
@@ -56,10 +62,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
         allowMethods: [
           CorsHttpMethod.OPTIONS,
           CorsHttpMethod.GET,
-          CorsHttpMethod.POST,
           CorsHttpMethod.PUT,
-          CorsHttpMethod.PATCH,
-          CorsHttpMethod.DELETE,
         ],
         allowCredentials: true,
       },
@@ -94,8 +97,10 @@ export class IntelligentCaptchaStack extends SolutionStack {
       code: lambda.Code.fromAsset(path.join(__dirname, '/../lambda.d/captchaGenerator')),
       role: lambdaARole,
       environment: {
-        DDB_TABLE_NAME: captcha_index_table.tableName
-      }
+        DDB_TABLE_NAME: captcha_index_table.tableName,
+        MAX_DAILY_INDEX: maxDailyIndex.valueAsString
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK,
     });
 
     getCaptchaLambda.node.addDependency(captcha_index_table);
@@ -111,9 +116,6 @@ export class IntelligentCaptchaStack extends SolutionStack {
       integration: getDogsLambdaIntegration
     });
 
-    new cdk.CfnOutput(this, 'httpUrl',{ value: httpApi.toString()  });
-
-    console.log('table name 👉', captcha_index_table.tableName);
-    console.log('table arn 👉', captcha_index_table.tableArn);
+    new cdk.CfnOutput(this, 'httpUrl',{ value: httpApi.apiEndpoint  });
   }
 }

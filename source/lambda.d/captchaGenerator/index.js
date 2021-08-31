@@ -12,8 +12,7 @@ exports.handler =  function(event, context, callback) {
   // Create the DynamoDB service object
   let ddb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 
-
-  //get current date\
+  //get current date with yyyymmdd format
   function dateFormat (date, fstr, utc) {
     utc = utc ? 'getUTC' : 'get';
     return fstr.replace (/%[Ymd]/g, function (m) {
@@ -27,36 +26,36 @@ exports.handler =  function(event, context, callback) {
       return ('0' + m).slice (-2);
     });
   }
+
   let currentDate = dateFormat(new Date (), "%Y%m%d", false);
-  console.log("guming debug>> current date is " + currentDate);
+  console.debug("current date is " + currentDate);
 
   //get a random index from 1 to MAXINDEX
-  const MAXINDEX = 20;
+  const MAXINDEX = process.env.MAX_DAILY_INDEX;
   let random = function (min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min)
   }
 
-  console.log(
+  console.debug(
     random(0, MAXINDEX-1)
   )
+
   let ddbtablename = process.env.DDB_TABLE_NAME
   let params = {
     TableName: ddbtablename,
     Key: {
-      // 'date': {S: currentDate},
-      'date': {S: '20210831'},
+      'date': {S: currentDate},
       'index': {N: random(0, MAXINDEX-1).toString() }
     }
   };
 
-
   ddb.getItem(params, function(err, data) {
     if (err) {
-      console.log("GuMing debug>> Error", err);
+      console.error("Failed to get DDB record with error:", err);
       callback(Error(err));
     } else {
-      console.log("GuMing debug>> captchaUrl is ", data.Item.captchaUrl.S);
-      console.log("GuMing debug>> result is ", data.Item.result.S);
+      console.debug("captchaUrl is ", data.Item.captchaUrl.S);
+      console.debug("result is ", data.Item.result.S);
       callback(null,
         {
           statusCode: 200,

@@ -1,16 +1,12 @@
 import * as path from 'path';
 import * as lambda from '@aws-cdk/aws-lambda';
 import { Construct, Stack, StackProps,  CfnParameter, CfnParameterProps } from '@aws-cdk/core';
-import {EndpointType} from "@aws-cdk/aws-apigateway";
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as iam from '@aws-cdk/aws-iam';
 import {ManagedPolicy} from "@aws-cdk/aws-iam";
-import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as cdk from '@aws-cdk/core';
-import * as apigateway2 from '@aws-cdk/aws-apigatewayv2'
-import {HttpMethod} from "@aws-cdk/aws-apigatewayv2";
-import {HttpProxyIntegration, LambdaProxyIntegration} from "@aws-cdk/aws-apigatewayv2-integrations";
-import {handler} from "aws-cdk/lib/commands/docs";
+import {CorsHttpMethod, HttpApi, HttpMethod} from "@aws-cdk/aws-apigatewayv2";
+import * as apiGatewayIntegrations from '@aws-cdk/aws-apigatewayv2-integrations';
 
 export class SolutionStack extends Stack {
   private _paramGroup: { [grpname: string]: CfnParameter[]} = {}
@@ -47,29 +43,28 @@ export class IntelligentCaptchaStack extends SolutionStack {
     this.setDescription("(SO####) - Intelligent Captcha stack.");
 
 
-    const api2 = new apigateway2.HttpApi(this,'httpapi',{
-      description: 'HTTP API for captcha service',
+    // 👇 create our HTTP Api
+    const httpApi = new HttpApi(this, 'http-api-captcha', {
+      description: 'HTTP API for getting captcha',
       corsPreflight: {
         allowHeaders: [
           'Content-Type',
           'X-Amz-Date',
           'Authorization',
           'X-Api-Key',
-        ]
+        ],
+        allowMethods: [
+          CorsHttpMethod.OPTIONS,
+          CorsHttpMethod.GET,
+          CorsHttpMethod.POST,
+          CorsHttpMethod.PUT,
+          CorsHttpMethod.PATCH,
+          CorsHttpMethod.DELETE,
+        ],
+        allowCredentials: true,
       },
-    });
-    const api = new apigateway.RestApi(this, 'api', {
-      description: 'example api gateway',
-      deployOptions: {
-        stageName: 'dev',
-      },
-      endpointConfiguration:{
-        types: [EndpointType.REGIONAL]
-      }
     });
 
-    new cdk.CfnOutput(this, 'apiUrl', {value: api.url});
-    new cdk.CfnOutput(this, 'httpUrl',{value: api2.url});
 
     // create Dynamodb table to save the captcha index file
     const captcha_index_table = new dynamodb.Table(this, 'Captcha_index', {
@@ -105,30 +100,18 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     getCaptchaLambda.node.addDependency(captcha_index_table);
 
-    // add a /captcha resource
-    const captcha = api.root.addResource('captcha');
-
-    const getCaptchaIntegration = new HttpProxyIntegration({
-      url: api2.url.toString(),
+    const getDogsLambdaIntegration = new apiGatewayIntegrations.LambdaProxyIntegration({
+      handler: getCaptchaLambda,
     });
 
-    const getCaptchaIntegration = new LambdaProxyIntegration(
-      handler: getCaptchaLambda;
-    )
-    api2.addRoutes({
-      path: '/todos',
+    // 👇 add route for GET /todos
+    httpApi.addRoutes({
+      path: '/captcha',
       methods: [HttpMethod.GET],
-
-      integration: new LambdaProxyIntegration({
-        apigateway2.handler : getCaptchaLambda
-      }),
+      integration: getDogsLambdaIntegration
     });
 
-    // integrate GET /captcha with getCaptchaLambda
-    captcha.addMethod(
-      'GET',
-      new apigateway.LambdaIntegration(getCaptchaLambda, {proxy: true}),
-    );
+    new cdk.CfnOutput(this, 'httpUrl',{ value: httpApi.toString()  });
 
     console.log('table name 👉', captcha_index_table.tableName);
     console.log('table arn 👉', captcha_index_table.tableArn);

@@ -1,15 +1,12 @@
 import * as path from 'path';
-<<<<<<< HEAD
-import * as ec2 from '@aws-cdk/aws-ec2';
 import * as lambda from '@aws-cdk/aws-lambda';
-import { Construct, Stack, StackProps, CfnMapping, CfnParameter, CfnParameterProps, Aws } from '@aws-cdk/core';
-=======
+import { Construct, Stack, StackProps,  CfnParameter, CfnParameterProps } from '@aws-cdk/core';
 import {EndpointType} from "@aws-cdk/aws-apigateway";
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as iam from '@aws-cdk/aws-iam';
 import {ManagedPolicy} from "@aws-cdk/aws-iam";
-
->>>>>>> b310c86 (adding dynamodb and fix lambda trigger issue)
+import * as apigateway from '@aws-cdk/aws-apigateway';
+import * as cdk from '@aws-cdk/core';
 
 export class SolutionStack extends Stack {
   private _paramGroup: { [grpname: string]: CfnParameter[]} = {}
@@ -57,6 +54,17 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     new cdk.CfnOutput(this, 'apiUrl', {value: api.url});
 
+    // create Dynamodb table to save the captcha index file
+    const captcha_index_table = new dynamodb.Table(this, 'Captcha_index', {
+      billingMode: dynamodb.BillingMode.PROVISIONED,
+      readCapacity: 10,
+      writeCapacity: 50,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      partitionKey: {name: 'date', type: dynamodb.AttributeType.STRING},
+      sortKey: {name: 'index', type: dynamodb.AttributeType.NUMBER},
+      pointInTimeRecovery: true,
+    });
+
     const lambdaARole = new iam.Role(this, 'LambdaRole', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
     });
@@ -70,8 +78,13 @@ export class IntelligentCaptchaStack extends SolutionStack {
       runtime: lambda.Runtime.NODEJS_14_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '/../lambda.d/captchaGenerator')),
-      role: lambdaARole
+      role: lambdaARole,
+      environment: {
+        DDB_TABLE_NAME: captcha_index_table.tableName
+      }
     });
+
+    getCaptchaLambda.node.addDependency(captcha_index_table);
 
     // add a /captcha resource
     const captcha = api.root.addResource('captcha');
@@ -81,18 +94,6 @@ export class IntelligentCaptchaStack extends SolutionStack {
       'GET',
       new apigateway.LambdaIntegration(getCaptchaLambda, {proxy: true}),
     );
-
-
-    // create Dynamodb table to save the captcha index file
-    const captcha_index_table = new dynamodb.Table(this, 'Captcha_index', {
-      billingMode: dynamodb.BillingMode.PROVISIONED,
-      readCapacity: 10,
-      writeCapacity: 50,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      partitionKey: {name: 'date', type: dynamodb.AttributeType.STRING},
-      sortKey: {name: 'index', type: dynamodb.AttributeType.NUMBER},
-      pointInTimeRecovery: true,
-    });
 
     console.log('table name 👉', captcha_index_table.tableName);
     console.log('table arn 👉', captcha_index_table.tableArn);

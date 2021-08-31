@@ -4,13 +4,13 @@
 exports.handler =  function(event, context, callback) {
 
   // Load the AWS SDK for Node.js
-  var AWS = require('aws-sdk');
+  let AWS = require('aws-sdk');
 
   // Set the region
   AWS.config.update({region: process.env.AWS_REGION});
 
   // Create the DynamoDB service object
-  var ddb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
+  let ddb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 
 
   //get current date\
@@ -27,25 +27,26 @@ exports.handler =  function(event, context, callback) {
       return ('0' + m).slice (-2);
     });
   }
-  var currentDate = dateFormat(new Date (), "%Y%m%d", false);
+  let currentDate = dateFormat(new Date (), "%Y%m%d", false);
   console.log("guming debug>> current date is " + currentDate);
 
   //get a random index from 1 to MAXINDEX
-  MAXINDEX = 20;
-  random = function(min, max){
+  const MAXINDEX = 20;
+  let random = function (min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min)
   }
 
   console.log(
     random(0, MAXINDEX-1)
   )
-  var params = {
-    TableName: 'IntelligentCaptchaStack-Captchaindex33A2C8CB-5LZ9XYOO7BLM',
+  let ddbtablename = process.env.DDB_TABLE_NAME
+  let params = {
+    TableName: ddbtablename,
     Key: {
-      'date': {S: currentDate},
+      // 'date': {S: currentDate},
+      'date': {S: '20210831'},
       'index': {N: random(0, MAXINDEX-1).toString() }
-    },
-    ProjectionExpression: 'ATTRIBUTE_NAME'
+    }
   };
 
 
@@ -54,12 +55,13 @@ exports.handler =  function(event, context, callback) {
       console.log("GuMing debug>> Error", err);
       callback(Error(err));
     } else {
-      console.log("GuMing debug>> Success", data);
+      console.log("GuMing debug>> captchaUrl is ", data.Item.captchaUrl.S);
+      console.log("GuMing debug>> result is ", data.Item.result.S);
       callback(null,
         {
           statusCode: 200,
           headers: { 'Content-Type': 'text/plain' },
-          body: "Succeed get the captcha"
+          body: JSON.stringify(data.Item)
         });
     }
   });

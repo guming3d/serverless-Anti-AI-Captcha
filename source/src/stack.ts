@@ -5,6 +5,7 @@ import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as iam from '@aws-cdk/aws-iam';
 import {ManagedPolicy} from "@aws-cdk/aws-iam";
 import * as cdk from '@aws-cdk/core';
+import { CaptchaGeneratorStack } from "./captcha-generator";
 import {CorsHttpMethod, HttpApi, HttpMethod} from "@aws-cdk/aws-apigatewayv2";
 import * as apiGatewayIntegrations from '@aws-cdk/aws-apigatewayv2-integrations';
 import * as logs from '@aws-cdk/aws-logs';
@@ -42,6 +43,11 @@ export class IntelligentCaptchaStack extends SolutionStack {
     super(scope, id, props);
 
     this.setDescription("(SO####) - Intelligent Captcha stack.");
+
+    //Offline Captcha generator stack with ECS schedule tasks
+    const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {}
+    );
+    console.debug(captchaGeneratorStack.stackName);
 
     const maxDailyIndex = new CfnParameter(this, 'MaxDailyCaptchaNumber', {
       description: 'Max number of Captcha to be generated each day',

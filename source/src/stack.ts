@@ -7,6 +7,10 @@ import * as iam from '@aws-cdk/aws-iam';
 import {ManagedPolicy} from "@aws-cdk/aws-iam";
 import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as cdk from '@aws-cdk/core';
+import * as apigateway2 from '@aws-cdk/aws-apigatewayv2'
+import {HttpMethod} from "@aws-cdk/aws-apigatewayv2";
+import {HttpProxyIntegration, LambdaProxyIntegration} from "@aws-cdk/aws-apigatewayv2-integrations";
+import {handler} from "aws-cdk/lib/commands/docs";
 
 export class SolutionStack extends Stack {
   private _paramGroup: { [grpname: string]: CfnParameter[]} = {}
@@ -42,6 +46,18 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     this.setDescription("(SO####) - Intelligent Captcha stack.");
 
+
+    const api2 = new apigateway2.HttpApi(this,'httpapi',{
+      description: 'HTTP API for captcha service',
+      corsPreflight: {
+        allowHeaders: [
+          'Content-Type',
+          'X-Amz-Date',
+          'Authorization',
+          'X-Api-Key',
+        ]
+      },
+    });
     const api = new apigateway.RestApi(this, 'api', {
       description: 'example api gateway',
       deployOptions: {
@@ -53,6 +69,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
     });
 
     new cdk.CfnOutput(this, 'apiUrl', {value: api.url});
+    new cdk.CfnOutput(this, 'httpUrl',{value: api2.url});
 
     // create Dynamodb table to save the captcha index file
     const captcha_index_table = new dynamodb.Table(this, 'Captcha_index', {
@@ -77,6 +94,8 @@ export class IntelligentCaptchaStack extends SolutionStack {
     const getCaptchaLambda = new lambda.Function(this, 'get-captcha-lambda', {
       runtime: lambda.Runtime.NODEJS_14_X,
       handler: 'index.handler',
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(60),
       code: lambda.Code.fromAsset(path.join(__dirname, '/../lambda.d/captchaGenerator')),
       role: lambdaARole,
       environment: {
@@ -88,6 +107,22 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     // add a /captcha resource
     const captcha = api.root.addResource('captcha');
+
+    const getCaptchaIntegration = new HttpProxyIntegration({
+      url: api2.url.toString(),
+    });
+
+    const getCaptchaIntegration = new LambdaProxyIntegration(
+      handler: getCaptchaLambda;
+    )
+    api2.addRoutes({
+      path: '/todos',
+      methods: [HttpMethod.GET],
+
+      integration: new LambdaProxyIntegration({
+        apigateway2.handler : getCaptchaLambda
+      }),
+    });
 
     // integrate GET /captcha with getCaptchaLambda
     captcha.addMethod(

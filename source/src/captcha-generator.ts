@@ -22,10 +22,9 @@ export class CaptchaGeneratorStack extends NestedStack {
       vpc: vpc
     });
 
-    //TODO:need to implement
     const taskDefinitionDailyGenerateCaptcha= new ecs.FargateTaskDefinition(this, "DailyGenerateCaptchaFargateTask", {
       memoryLimitMiB: 2048,
-      cpu: 512
+      cpu: 256
     })
 
 
@@ -44,7 +43,7 @@ export class CaptchaGeneratorStack extends NestedStack {
 
     taskDefinitionDailyGenerateCaptcha.addContainer("DailyCaptchaGeneratorContainer", {
       image: ContainerImage.fromDockerImageAsset(dailyCaptchaGeneratorImage),
-      cpu: 512,
+      cpu: 256,
       memoryLimitMiB: 2048,
       memoryReservationMiB: 2048,
       logging: ecs.LogDriver.awsLogs({
@@ -54,7 +53,6 @@ export class CaptchaGeneratorStack extends NestedStack {
           retention: logs.RetentionDays.ONE_WEEK
         })
       }),
-      //entryPoint: ["python3", "src/live_conversion.py"],
     })
 
     const permissions = new iam.PolicyStatement({

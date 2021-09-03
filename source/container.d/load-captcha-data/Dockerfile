@@ -5,7 +5,7 @@ RUN mkdir -p /data/site-packages/
 
 FROM public.ecr.aws/lambda/python:${VERSION}
 
-RUN yum install -y tar gzip unzip
+RUN yum install -y tar gzip unzip openssl awk
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
     && unzip awscliv2.zip \
     && ./aws/install \

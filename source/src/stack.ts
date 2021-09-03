@@ -1,39 +1,48 @@
 import * as path from 'path';
 import * as lambda from '@aws-cdk/aws-lambda';
-import { Construct, Stack, StackProps,  CfnParameter, CfnParameterProps } from '@aws-cdk/core';
+import {Construct, Stack, StackProps, CfnParameter, CfnParameterProps} from '@aws-cdk/core';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as iam from '@aws-cdk/aws-iam';
 import {ManagedPolicy} from "@aws-cdk/aws-iam";
 import * as cdk from '@aws-cdk/core';
-import { CaptchaGeneratorStack } from "./captcha-generator";
+import {CaptchaGeneratorStack} from "./captcha-generator";
 import {CorsHttpMethod, HttpApi, HttpMethod} from "@aws-cdk/aws-apigatewayv2";
 import * as apiGatewayIntegrations from '@aws-cdk/aws-apigatewayv2-integrations';
 import * as logs from '@aws-cdk/aws-logs';
 
 export class SolutionStack extends Stack {
-  private _paramGroup: { [grpname: string]: CfnParameter[]} = {}
+  private _paramGroup: { [grpname: string]: CfnParameter[] } = {}
 
-  protected setDescription(description: string) { this.templateOptions.description = description; }
-  protected newParam(id: string, props?: CfnParameterProps): CfnParameter { return new CfnParameter(this, id, props); }
-  protected addGroupParam(props: { [key: string]: CfnParameter[]}): void {
+  protected setDescription(description: string) {
+    this.templateOptions.description = description;
+  }
+
+  protected newParam(id: string, props?: CfnParameterProps): CfnParameter {
+    return new CfnParameter(this, id, props);
+  }
+
+  protected addGroupParam(props: { [key: string]: CfnParameter[] }): void {
     for (const key of Object.keys(props)) {
       const params = props[key];
       this._paramGroup[key] = params.concat(this._paramGroup[key] ?? []);
     }
     this._setParamGroups();
   }
+
   private _setParamGroups(): void {
-    if (!this.templateOptions.metadata) { this.templateOptions.metadata = {}; }
+    if (!this.templateOptions.metadata) {
+      this.templateOptions.metadata = {};
+    }
     const mkgrp = (label: string, params: CfnParameter[]) => {
       return {
-        Label: { default: label },
+        Label: {default: label},
         Parameters: params.map(p => {
           return p ? p.logicalId : '';
         }).filter(id => id),
       };
     };
     this.templateOptions.metadata['AWS::CloudFormation::Interface'] = {
-      ParameterGroups: Object.keys(this._paramGroup).map(key => mkgrp(key, this._paramGroup[key]) ),
+      ParameterGroups: Object.keys(this._paramGroup).map(key => mkgrp(key, this._paramGroup[key])),
     };
   }
 }
@@ -47,6 +56,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
     //Offline Captcha generator stack with ECS schedule tasks
     const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {}
     );
+
     console.debug(captchaGeneratorStack.stackName);
 
     const maxDailyIndex = new CfnParameter(this, 'MaxDailyCaptchaNumber', {
@@ -55,7 +65,6 @@ export class IntelligentCaptchaStack extends SolutionStack {
       default: 20,
     })
 
-    //  create our HTTP Api
     const httpApi = new HttpApi(this, 'http-api-captcha', {
       description: 'HTTP API for getting captcha',
       corsPreflight: {
@@ -73,7 +82,6 @@ export class IntelligentCaptchaStack extends SolutionStack {
         allowCredentials: true,
       },
     });
-
 
     // create Dynamodb table to save the captcha index file
     const captcha_index_table = new dynamodb.Table(this, 'Captcha_index', {
@@ -115,13 +123,13 @@ export class IntelligentCaptchaStack extends SolutionStack {
       handler: getCaptchaLambda,
     });
 
-    // 👇 add route for GET /todos
+    // 👇 add route for GET /captcha
     httpApi.addRoutes({
       path: '/captcha',
       methods: [HttpMethod.GET],
       integration: getDogsLambdaIntegration
     });
 
-    new cdk.CfnOutput(this, 'httpUrl',{ value: httpApi.apiEndpoint  });
+    new cdk.CfnOutput(this, 'httpUrl', {value: httpApi.apiEndpoint});
   }
 }

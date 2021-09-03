@@ -9,7 +9,10 @@ logger.setLevel(logging.DEBUG)
 
 parser = argparse.ArgumentParser(description='Bulk load captcha data to S3 and DynamoDB.')
 
-logger.info(f'Prepared graph data for bulk load...')
+logger.info(f'Prepared captcha data for bulk load...')
 
 prepareDataCmd=Path(os.path.abspath(__file__)).parent.joinpath('prepare-data.sh')
-subprocess.check_call([prepareDataCmd])
+dataArgs = ['s3://captcha-generator-buckets-812669741844-cn-north-1/2021/09/02/',
+            'IntelligentCaptchaStack-Captchaindex33A2C8CB-5LZ9XYOO7BLM']
+
+subprocess.check_call([prepareDataCmd] + list(dataArgs))

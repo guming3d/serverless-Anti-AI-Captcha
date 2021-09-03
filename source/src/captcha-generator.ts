@@ -1,13 +1,13 @@
-import {Construct, IgnoreMode, NestedStack, NestedStackProps} from '@aws-cdk/core';
+import * as path from "path";
+import * as iam from "@aws-cdk/aws-iam";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as ecs from "@aws-cdk/aws-ecs";
-import * as ecs_patterns from "@aws-cdk/aws-ecs-patterns";
-import * as events from "@aws-cdk/aws-events";
-import * as iam from "@aws-cdk/aws-iam";
-import { DockerImageAsset } from '@aws-cdk/aws-ecr-assets';
-import {ContainerImage} from "@aws-cdk/aws-ecs";
-import * as path from "path";
 import * as logs from "@aws-cdk/aws-logs";
+import * as events from "@aws-cdk/aws-events";
+import * as ecs_patterns from "@aws-cdk/aws-ecs-patterns";
+import { ContainerImage } from "@aws-cdk/aws-ecs";
+import { DockerImageAsset } from '@aws-cdk/aws-ecr-assets';
+import { Construct, IgnoreMode, NestedStack, NestedStackProps } from '@aws-cdk/core';
 
 
 export class CaptchaGeneratorStack extends NestedStack {
@@ -27,8 +27,7 @@ export class CaptchaGeneratorStack extends NestedStack {
       cpu: 256
     })
 
-
-    const dailyCaptchaGeneratorImage = new DockerImageAsset(this, 'BulkLoadGraphDataImage', {
+    const dailyCaptchaGeneratorImage = new DockerImageAsset(this, 'BulkLoadCaptchaDataImage', {
       directory: path.join(__dirname, '../'),
       file: 'container.d/load-captcha-data/Dockerfile',
       exclude: [
@@ -39,7 +38,6 @@ export class CaptchaGeneratorStack extends NestedStack {
       ],
       ignoreMode: IgnoreMode.GLOB,
     });
-
 
     taskDefinitionDailyGenerateCaptcha.addContainer("DailyCaptchaGeneratorContainer", {
       image: ContainerImage.fromDockerImageAsset(dailyCaptchaGeneratorImage),

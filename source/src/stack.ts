@@ -53,16 +53,10 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     this.setDescription("(SO####) - Intelligent Captcha stack.");
 
-    //Offline Captcha generator stack with ECS schedule tasks
-    const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {}
-    );
-
-    console.debug(captchaGeneratorStack.stackName);
-
     const maxDailyIndex = new CfnParameter(this, 'MaxDailyCaptchaNumber', {
       description: 'Max number of Captcha to be generated each day',
       type: 'Number',
-      default: 20,
+      default: 100,
     })
 
     const httpApi = new HttpApi(this, 'http-api-captcha', {
@@ -94,11 +88,12 @@ export class IntelligentCaptchaStack extends SolutionStack {
       pointInTimeRecovery: true,
     });
 
-    const lambdaARole = new iam.Role(this, 'LambdaRole', {
+    const lambdaRole = new iam.Role(this, 'LambdaRole', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
     });
 
-    lambdaARole.addManagedPolicy(
+    // front end lambda only need to access DynamoDB
+    lambdaRole.addManagedPolicy(
       ManagedPolicy.fromAwsManagedPolicyName('AmazonDynamoDBFullAccess')
     );
 
@@ -109,7 +104,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
       memorySize: 512,
       timeout: cdk.Duration.seconds(60),
       code: lambda.Code.fromAsset(path.join(__dirname, '/../lambda.d/captchaGenerator')),
-      role: lambdaARole,
+      role: lambdaRole,
       environment: {
         DDB_TABLE_NAME: captcha_index_table.tableName,
         MAX_DAILY_INDEX: maxDailyIndex.valueAsString
@@ -119,7 +114,16 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     getCaptchaLambda.node.addDependency(captcha_index_table);
 
-    const getDogsLambdaIntegration = new apiGatewayIntegrations.LambdaProxyIntegration({
+    //Offline Captcha generator stack with ECS schedule tasks
+    const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {
+      ddb_name : captcha_index_table.tableName,
+      captcha_number : maxDailyIndex.valueAsString
+      }
+    );
+
+    captchaGeneratorStack.node.addDependency(captcha_index_table);
+
+    const getCaptchaLambdaIntegration = new apiGatewayIntegrations.LambdaProxyIntegration({
       handler: getCaptchaLambda,
     });
 
@@ -127,7 +131,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
     httpApi.addRoutes({
       path: '/captcha',
       methods: [HttpMethod.GET],
-      integration: getDogsLambdaIntegration
+      integration: getCaptchaLambdaIntegration
     });
 
     new cdk.CfnOutput(this, 'httpUrl', {value: httpApi.apiEndpoint});

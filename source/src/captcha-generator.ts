@@ -7,19 +7,27 @@ import * as events from "@aws-cdk/aws-events";
 import * as ecs_patterns from "@aws-cdk/aws-ecs-patterns";
 import { ContainerImage } from "@aws-cdk/aws-ecs";
 import { DockerImageAsset } from '@aws-cdk/aws-ecr-assets';
-import { Construct, IgnoreMode, NestedStack, NestedStackProps } from '@aws-cdk/core';
+import { Aws, Construct, IgnoreMode, NestedStack, NestedStackProps } from '@aws-cdk/core';
 
+export interface CaptchaGeneratorStackProps extends NestedStackProps {
+  readonly ddb_name: string,
+  readonly captcha_number: string
+}
 
 export class CaptchaGeneratorStack extends NestedStack {
 
-  constructor(scope: Construct, id: string, props: NestedStackProps) {
+  constructor(scope: Construct, id: string, props: CaptchaGeneratorStackProps) {
     super(scope, id, props);
+
+    const ddbName = props.ddb_name
+    const captchaNumber = props.captcha_number
     const vpc = new ec2.Vpc(this, "MyVpc", {
       maxAzs: 3 // Default is all AZs in region
     });
 
     const cluster = new ecs.Cluster(this, "CaptchaGeneratorCluster", {
-      vpc: vpc
+      vpc: vpc,
+      containerInsights: true
     });
 
     const taskDefinitionDailyGenerateCaptcha= new ecs.FargateTaskDefinition(this, "DailyGenerateCaptchaFargateTask", {
@@ -51,6 +59,12 @@ export class CaptchaGeneratorStack extends NestedStack {
           retention: logs.RetentionDays.ONE_WEEK
         })
       }),
+      environment:
+        {
+          CAPTCHA_DDB_NAME: ddbName,
+          CAPTCHA_NUMBER: captchaNumber,
+          REGION_NAME: Aws.REGION
+        },
     })
 
     const permissions = new iam.PolicyStatement({

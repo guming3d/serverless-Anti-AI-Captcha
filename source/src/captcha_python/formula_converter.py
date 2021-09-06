@@ -2,10 +2,8 @@
     Converter to translate the formula tree to a Chinese string, describing the formula
 """
 
-import numpy as np
 import configures as configs
 import formula_gen as fgen
-from formula_gen import BT_Node
 from utils import convert_num, convert_op
 
 

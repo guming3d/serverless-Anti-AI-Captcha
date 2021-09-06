@@ -67,7 +67,7 @@ export class CaptchaGeneratorStack extends NestedStack {
       cluster: cluster,
       desiredTaskCount: 1,
       enabled: true,
-      schedule: events.Schedule.expression("cron(0/15 * * * ? *)"),
+      schedule: events.Schedule.expression("cron(* 16 * * ? *)"),
       vpc: vpc,
       scheduledFargateTaskDefinitionOptions: {taskDefinition: taskDefinitionDailyGenerateCaptcha}
     });

@@ -58,9 +58,6 @@ BK_WIDTH = 500                      # in pixel
 BK_HEIGHT = 50                      # in pixel
 X_RANGE = 10                        # in pixel
 Y_RANGE = 5                         # in pixel
-BAR_LENGTH_RANGE = 100              # in pixel
-BAR_WIDTH_RANGE = 5                 # in pixel
-BAR_ROT_RANGE = 45                  # in degree
 
 # TODO: Constants of visible noise lines
 NUM_BARS = 12

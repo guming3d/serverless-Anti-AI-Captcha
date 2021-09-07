@@ -57,9 +57,9 @@ class Converter():
             return op_unit_cn
 
 
-if __name__ == '__main__':
-    # for local test only
-    f_tree = fgen.generate_formula()
-
-    converter = Converter(f_tree)
-    print(converter.convert_2_cn())
+# if __name__ == '__main__':
+#     # for local test only
+#     f_tree = fgen.generate_formula()
+#
+#     converter = Converter(f_tree)
+#     print(converter.convert_2_cn())

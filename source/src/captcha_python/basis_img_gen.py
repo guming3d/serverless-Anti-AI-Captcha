@@ -133,20 +133,20 @@ class Basic_vimage_generator():
 
 
 # For local test only
-if __name__ == '__main__':
-    parse = argparse.ArgumentParser('Generate basic char images')
-    parse.add_argument('--save_path', type=str,
-                       help='The path to save the generated basic char iamges')
-    parse.add_argument('--num_per_char', type=int, default=100,
-                       help='The number of images generated per char, default=100')
-    args = parse.parse_args()
-    print(args)
-
-    tic = time.time()
-    char_generator = Basic_vimage_generator(save_path=args.save_path)
-
-    text_dict = configs.DIGIT_DICT
-    char_generator.generate(text_dict, num_imgs=args.num_per_char, is_save=True)
-
-    duration = time.time() - tic
-    print('Total use {} seconds'.format(duration))
+# if __name__ == '__main__':
+#     parse = argparse.ArgumentParser('Generate basic char images')
+#     parse.add_argument('--save_path', type=str,
+#                        help='The path to save the generated basic char iamges')
+#     parse.add_argument('--num_per_char', type=int, default=100,
+#                        help='The number of images generated per char, default=100')
+#     args = parse.parse_args()
+#     print(args)
+#
+#     tic = time.time()
+#     char_generator = Basic_vimage_generator(save_path=args.save_path)
+#
+#     text_dict = configs.DIGIT_DICT
+#     char_generator.generate(text_dict, num_imgs=args.num_per_char, is_save=True)
+#
+#     duration = time.time() - tic
+#     print('Total use {} seconds'.format(duration))

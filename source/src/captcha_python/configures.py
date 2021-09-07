@@ -128,3 +128,10 @@ CHAR_DICT = {
     '与': 28,
     '再': 29
 }
+
+# Constants for authorization
+SECRETE_PHRASE = 'AWS GCR CAPTCHA SOLUTION'
+PADDING = '#'
+CUSTOMER_MAP = {
+    'test_account': '87f239a402e7f80c1c3a487bb65b7d87'
+}

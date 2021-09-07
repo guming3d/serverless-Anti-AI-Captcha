@@ -29,9 +29,6 @@ def char_transformer():
 
 
 def noising(args, is_display=False, is_save=True):
-    # 0. Mis part
-    device = "cuda:{}".format(args.gpu) and th.cuda.is_available() if args.gpu >= 0 else "cpu"
-    print("Use device {}".format(device))
 
     # 1. Process dataset
     chardata = CharImageDataset(char_map=configs.CHAR_DICT, transform=char_transformer())
@@ -54,12 +51,13 @@ def noising(args, is_display=False, is_save=True):
     else:
         raise Exception('Only support VCNN, LeNet, AlexNet, and VGG...')
 
-    model_stat = th.load(args.model_path, map_location=device)
+    model_path = os.path.join(args.model_path, args.saved_model_name)
+    model_stat = th.load(model_path, map_location=args.device)
     model.load_state_dict(model_stat)
-    model = model.to(device)
+    model = model.to(args.device)
 
     # 3. Define adversary method
-    adversary = DeepFool(model, device=device)
+    adversary = DeepFool(model, device=args.device)
 
     # 4. Loop through all images to add adversary noise
     advimg_list = []
@@ -162,19 +160,19 @@ def display_images(ori_img, ori_label, adv_img, adv_label):
     plt.show()
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser("Add noises to char image classification models")
-    parser.add_argument('--data_path', type=str, default='../data4test',
-                        help='The train data path, defaut=../data4test')
-    parser.add_argument('--gpu', type=int, default=-1,
-                        help='The GPU device ID, default=-1, using CPU')
-    parser.add_argument('--model_name', type=str, default='VGG',
-                        help='The name of CNN model, options: VCNN, LeNet, AlexNet, VGG, default=VGG')
-    parser.add_argument('--model_path', type=str, default='../outputs/models/VGG_047408.pth',
-                        help='The save model path, default=../outputs/models')
-    parser.add_argument('--save_path', type=str, default='../outputs/adv_img',
-                        help='The save model path, default=../outputs/adv_img')
-
-    args = parser.parse_args()
-    print(args)
-    noising(args, is_display=True)
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser("Add noises to char image classification models")
+#     parser.add_argument('--data_path', type=str, default='../data4test',
+#                         help='The train data path, defaut=../data4test')
+#     parser.add_argument('--gpu', type=int, default=-1,
+#                         help='The GPU device ID, default=-1, using CPU')
+#     parser.add_argument('--model_name', type=str, default='VGG',
+#                         help='The name of CNN model, options: VCNN, LeNet, AlexNet, VGG, default=VGG')
+#     parser.add_argument('--model_path', type=str, default='../outputs/models/VGG_047408.pth',
+#                         help='The save model path, default=../outputs/models')
+#     parser.add_argument('--save_path', type=str, default='../outputs/adv_img',
+#                         help='The save model path, default=../outputs/adv_img')
+#
+#     args = parser.parse_args()
+#     print(args)
+#     noising(args, is_display=True)

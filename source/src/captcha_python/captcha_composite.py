@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 from tqdm import tqdm
 
+from utils import encrypt_fn
+
 from formula_gen import generate_formula
 from formula_converter import Converter
 
@@ -128,7 +130,7 @@ class Captcha_Compositor():
         return X, Y
 
 
-def save_captcha(captcha_img, formula, answer, save_path):
+def save_captcha(captcha_img, formula, answer, save_path, customer_key):
     """
     Save the captcha image and answer to local disk in the same folder structure.
     The file name of the captcha image include 2 parts: hashcode of the image + '_' + answer
@@ -137,10 +139,13 @@ def save_captcha(captcha_img, formula, answer, save_path):
     :param formula
     :param answer:
     :param save_path:
+    :param customer_key:
     :return:
     """
     # create file name
     hashcode = hash(str(np.asarray(captcha_img).tolist()))
+
+    encrypted_answer = encrypt_fn(answer, customer_key)
     file_name = str(hashcode) + '_' + formula + '_' + str(answer) + '.png'
     file_path = os.path.join(save_path, file_name)
 
@@ -148,41 +153,41 @@ def save_captcha(captcha_img, formula, answer, save_path):
     captcha_img.save(file_path, 'PNG')
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser("Captch image composition codes.")
-    parser.add_argument('--image_path', type=str, default='../outputs/adv_img',
-                        help='The adv image path, defaut=../outputs/adv_img')
-    parser.add_argument('--save_path', type=str, default='../outputs/captcha',
-                        help='The save captcha path, default=../outputs/captcha')
-    parser.add_argument('--num_captcha', type=int, default=8000,
-                        help='The number of captcha images to generate. Default=8000')
-    parser.add_argument('--is_save', type=int, default=1,
-                        help='If save the genrated captcha image to local disk, 0=not save, 1=save, default=1')
-
-    args = parser.parse_args()
-    print(args)
-
-    if not os.path.exists(args.save_path):
-        os.mkdir(args.save_path)
-
-    compositor = Captcha_Compositor(adv_img_path=args.image_path)
-
-    for num in tqdm(range(args.num_captcha)):
-        # Step 1 generate a formula-answer pair
-        f_tree = generate_formula()
-        answer = f_tree.get_result()
-
-        # Step 2 convert to Chinese
-        converter = Converter(f_tree)
-        cn_formula_str = converter.convert_2_cn()
-
-        # Step 3 Generate the captcha image
-        captcha_img = compositor.generate_captcha(cn_formula_str)
-
-        # Step 4 Save to save path
-        if args.is_save:
-            save_captcha(captcha_img, cn_formula_str, answer, args.save_path)
-
-            # Step 5 output logs
-            if (num + 1) % 100 == 0:
-                print('Generate {} captcha images, and save to {}'.format(num, args.save_path))
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser("Captch image composition codes.")
+#     parser.add_argument('--image_path', type=str, default='../outputs/adv_img',
+#                         help='The adv image path, defaut=../outputs/adv_img')
+#     parser.add_argument('--save_path', type=str, default='../outputs/captcha',
+#                         help='The save captcha path, default=../outputs/captcha')
+#     parser.add_argument('--num_captcha', type=int, default=8000,
+#                         help='The number of captcha images to generate. Default=8000')
+#     parser.add_argument('--is_save', type=int, default=1,
+#                         help='If save the genrated captcha image to local disk, 0=not save, 1=save, default=1')
+#
+#     args = parser.parse_args()
+#     print(args)
+#
+#     if not os.path.exists(args.save_path):
+#         os.mkdir(args.save_path)
+#
+#     compositor = Captcha_Compositor(adv_img_path=args.image_path)
+#
+#     for num in tqdm(range(args.num_captcha)):
+#         # Step 1 generate a formula-answer pair
+#         f_tree = generate_formula()
+#         answer = f_tree.get_result()
+#
+#         # Step 2 convert to Chinese
+#         converter = Converter(f_tree)
+#         cn_formula_str = converter.convert_2_cn()
+#
+#         # Step 3 Generate the captcha image
+#         captcha_img = compositor.generate_captcha(cn_formula_str)
+#
+#         # Step 4 Save to save path
+#         if args.is_save:
+#             save_captcha(captcha_img, cn_formula_str, answer, args.save_path)
+#
+#             # Step 5 output logs
+#             if (num + 1) % 100 == 0:
+#                 print('Generate {} captcha images, and save to {}'.format(num, args.save_path))

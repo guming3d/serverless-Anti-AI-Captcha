@@ -24,10 +24,6 @@ def char_transformer():
 
 
 def train(args):
-    # 0. Mis part
-    device = "cuda:{}".format(args.gpu) and th.cuda.is_available() if args.gpu >= 0 else "cpu"
-    print("Use device {}".format(device))
-
     # 1. Process dataset
     chardata = CharImageDataset(char_map=configs.CHAR_DICT, transform=char_transformer())
     num_classes = chardata.get_classes()
@@ -49,10 +45,10 @@ def train(args):
     else:
         raise Exception('Only support VCNN, LeNet, AlexNet, and VGG...')
 
-    model = model.to(device)
+    model = model.to(args.device)
 
     # 3. Define training components
-    loss_fn = th.nn.CrossEntropyLoss().to(device)
+    loss_fn = th.nn.CrossEntropyLoss().to(args.device)
     optim = th.optim.Adam(model.parameters(), lr=args.lr)
 
     # 4. Train loop
@@ -78,29 +74,33 @@ def train(args):
 
     # Save the trained model for adversary training
     model_stat = model.state_dict()
-    model_name = os.path.join(args.save_path, args.model_name + '_{:06d}'.format(np.random.randint(0, 100000)) + '.pth')
-    th.save(model_stat, model_name)
+    saved_model_name = args.model_name + '_{:06d}'.format(np.random.randint(0, 100000)) + '.pth'
+    model_path = os.path.join(args.save_path, saved_model_name)
+    th.save(model_stat, model_path)
+
+    return saved_model_name
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser("Char image classification training codes")
-    parser.add_argument('--data_path', type=str, default='../data4test',
-                        help='The train data path, defaut=../data4test')
-    parser.add_argument('--gpu', type=int, default=-1,
-                        help='The GPU device ID, default=-1, using CPU')
-    parser.add_argument('--batch_size', type=int, default=256,
-                        help='The size of mini-batch, default=256')
-    parser.add_argument('--num-worker', type=int, default=0,
-                        help='The number of dataloader workers, default=0')
-    parser.add_argument('--model_name', type=str, default='VGG',
-                        help='The name of CNN model, options: VCNN, LeNet, AlexNet, VGG, default=VGG')
-    parser.add_argument('--epoches', type=int, default=100,
-                        help='The max number of training epoches, default=100')
-    parser.add_argument('--lr', type=float, default=0.001,
-                        help='Learning rate of training, default=1e-3')
-    parser.add_argument('--save_path', type=str, default='../outputs/models',
-                        help='The save model path, default=../outputs/models')
-
-    args = parser.parse_args()
-    print(args)
-    train(args)
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser("Char image classification training codes")
+#     parser.add_argument('--data_path', type=str, default='../data4test',
+#                         help='The train data path, defaut=../data4test')
+#     parser.add_argument('--gpu', type=int, default=-1,
+#                         help='The GPU device ID, default=-1, using CPU')
+#     parser.add_argument('--batch_size', type=int, default=256,
+#                         help='The size of mini-batch, default=256')
+#     parser.add_argument('--num-worker', type=int, default=0,
+#                         help='The number of dataloader workers, default=0')
+#     parser.add_argument('--model_name', type=str, default='VGG',
+#                         help='The name of CNN model, options: VCNN, LeNet, AlexNet, VGG, default=VGG')
+#     parser.add_argument('--epoches', type=int, default=100,
+#                         help='The max number of training epoches, default=100')
+#     parser.add_argument('--lr', type=float, default=0.001,
+#                         help='Learning rate of training, default=1e-3')
+#     parser.add_argument('--save_path', type=str, default='../outputs/models',
+#                         help='The save model path, default=../outputs/models')
+#
+#     args = parser.parse_args()
+#     print(args)
+#
+#     train(args)

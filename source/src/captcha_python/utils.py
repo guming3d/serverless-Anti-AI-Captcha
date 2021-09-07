@@ -2,8 +2,13 @@
     Various utility functions for different files
 """
 
-import math
+import secrets
+import codecs
 import numpy as np
+import base64
+
+import scrypt
+from Crypto.Cipher import AES
 
 import configures as configs
 
@@ -89,7 +94,70 @@ def convert_op(input_op):
     return op_cn_candidates[choice], is_comb
 
 
+def check_customer(customer_name, encrypted_name):
+    # Get the key
+    if configs.CUSTOMER_MAP.get(customer_name) is None:
+        return False, ''
+    else:
+        hex_key_str = configs.CUSTOMER_MAP.get(customer_name)
+        key = bytes.fromhex(hex_key_str)
+
+    # Decrypt the encrpted name with the given customer_name
+    decrypt_customer_name = decrypt_fn(key, encrypted_name)
+
+    if decrypt_customer_name == customer_name:
+        return True, key
+    else:
+        return False, ''
+
+
+def encrypt_fn(key, text):
+    # Padding text to be 16 chars long, or times of 16
+    while len(text) % 16 != 0:
+        text += configs.PADDING
+    pad_text = str.encode(text)
+
+    # Encrypt the text with ECB mode by the given key
+    aes = AES.new(key, AES.MODE_ECB)
+    encrypt_aes = aes.encrypt(pad_text)
+    encrypt_text = str(base64.encodebytes(encrypt_aes), encoding='utf-8')
+
+    return encrypt_text
+
+
+def decrypt_fn(key, encrypt_text):
+    # decrypt text
+    aes = AES.new(key, AES.MODE_ECB)
+    base64_decrypted = base64.decodebytes(encrypt_text.encode(encoding='utf-8'))
+    decrypted_text = str(aes.decrypt(base64_decrypted), encoding='utf-8')
+
+    # remove the padding chars '#'
+    text = decrypted_text.replace(configs.PADDING, '')
+
+    return text
+
+
+def generate_customer_key(customer_name):
+    # get a salt
+    salt = secrets.token_bytes(32)
+    phrase = customer_name + configs.SECRETE_PHRASE
+
+    raw_key = scrypt.hash(phrase, salt, N=2048, r=8, p=1, buflen=16)
+    # print(raw_key)
+    key = raw_key.hex()
+
+    return key
+
+
 if __name__ == '__main__':
     # for test only
-    input_num = 50
-    print(convert_num(input_num))
+    # test_key = generate_customer_key('test_account')
+    # print(test_key)
+    # print(bytes.fromhex(test_key))
+
+    key = bytes.fromhex(configs.CUSTOMER_MAP['test_account'])
+
+    encrypt_text = encrypt_fn(key, 'test_account')
+    print(encrypt_text)
+    text = decrypt_fn(key, encrypt_text)
+    print(text)

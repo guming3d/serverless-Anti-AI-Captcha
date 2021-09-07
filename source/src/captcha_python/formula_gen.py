@@ -177,11 +177,11 @@ def generate_formula(save_path=None):
     return formula_tree
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Mathematical formula generation program')
-    parser.add_argument("--save_path", type=str, default='../data4test')
-
-    args = parser.parse_args()
-    print(args)
-
-    generate_formula(args.save_path)
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser('Mathematical formula generation program')
+#     parser.add_argument("--save_path", type=str, default='../data4test')
+#
+#     args = parser.parse_args()
+#     print(args)
+#
+#     generate_formula(args.save_path)

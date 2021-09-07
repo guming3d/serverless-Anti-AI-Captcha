@@ -11,7 +11,8 @@ import { Aws, Construct, IgnoreMode, NestedStack, NestedStackProps } from '@aws-
 
 export interface CaptchaGeneratorStackProps extends NestedStackProps {
   readonly ddb_name: string,
-  readonly captcha_number: string
+  readonly captcha_number: string,
+  readonly captcha_s3_bucket: string
 }
 
 export class CaptchaGeneratorStack extends NestedStack {
@@ -21,6 +22,7 @@ export class CaptchaGeneratorStack extends NestedStack {
 
     const ddbName = props.ddb_name
     const captchaNumber = props.captcha_number
+    const s3_bucket_name = props.captcha_s3_bucket
     const vpc = new ec2.Vpc(this, "MyVpc", {
       maxAzs: 3 // Default is all AZs in region
     });
@@ -63,7 +65,8 @@ export class CaptchaGeneratorStack extends NestedStack {
         {
           CAPTCHA_DDB_NAME: ddbName,
           CAPTCHA_NUMBER: captchaNumber,
-          REGION_NAME: Aws.REGION
+          REGION_NAME: Aws.REGION,
+          S3_BUCKET_NAME: s3_bucket_name
         },
     })
 

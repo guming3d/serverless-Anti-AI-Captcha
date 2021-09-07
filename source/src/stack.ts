@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as lambda from '@aws-cdk/aws-lambda';
-import {Construct, Stack, StackProps, CfnParameter, CfnParameterProps} from '@aws-cdk/core';
+import {Construct, Stack, StackProps, CfnParameter, CfnParameterProps, RemovalPolicy} from '@aws-cdk/core';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as iam from '@aws-cdk/aws-iam';
 import {ManagedPolicy} from "@aws-cdk/aws-iam";
@@ -9,6 +9,7 @@ import {CaptchaGeneratorStack} from "./captcha-generator";
 import {CorsHttpMethod, HttpApi, HttpMethod} from "@aws-cdk/aws-apigatewayv2";
 import * as apiGatewayIntegrations from '@aws-cdk/aws-apigatewayv2-integrations';
 import * as logs from '@aws-cdk/aws-logs';
+import {Bucket, BucketEncryption} from "@aws-cdk/aws-s3";
 
 export class SolutionStack extends Stack {
   private _paramGroup: { [grpname: string]: CfnParameter[] } = {}
@@ -58,6 +59,20 @@ export class IntelligentCaptchaStack extends SolutionStack {
       type: 'Number',
       default: 100,
     })
+
+    const accessLogBucket = new Bucket(this, 'BucketAccessLog', {
+      encryption: BucketEncryption.S3_MANAGED,
+      removalPolicy: RemovalPolicy.RETAIN,
+      serverAccessLogsPrefix: 'accessLogBucketAccessLog',
+    });
+
+    const captcha_s3_bucket = new Bucket(this, 'CaptchaGenerationBucket', {
+      bucketName: "captcha-generator-buckets-"+this.account+'-'+this.region,
+      encryption: BucketEncryption.S3_MANAGED,
+      removalPolicy: RemovalPolicy.RETAIN,
+      serverAccessLogsBucket: accessLogBucket,
+      serverAccessLogsPrefix: 'dataBucketAccessLog',
+    });
 
     const httpApi = new HttpApi(this, 'http-api-captcha', {
       description: 'HTTP API for getting captcha',
@@ -117,11 +132,13 @@ export class IntelligentCaptchaStack extends SolutionStack {
     //Offline Captcha generator stack with ECS schedule tasks
     const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {
       ddb_name : captcha_index_table.tableName,
-      captcha_number : maxDailyIndex.valueAsString
+      captcha_number : maxDailyIndex.valueAsString,
+      captcha_s3_bucket : captcha_s3_bucket.bucketName
       }
     );
 
     captchaGeneratorStack.node.addDependency(captcha_index_table);
+    captchaGeneratorStack.node.addDependency(captcha_s3_bucket);
 
     const getCaptchaLambdaIntegration = new apiGatewayIntegrations.LambdaProxyIntegration({
       handler: getCaptchaLambda,

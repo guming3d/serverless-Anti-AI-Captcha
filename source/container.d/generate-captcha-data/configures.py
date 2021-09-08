@@ -133,5 +133,5 @@ CHAR_DICT = {
 SECRETE_PHRASE = 'AWS GCR CAPTCHA SOLUTION'
 PADDING = '#'
 CUSTOMER_MAP = {
-    'test_account': '87f239a402e7f80c1c3a487bb65b7d87'
+    'test_account': 'f0eeb0d35c0b014bb7141e80b9089e7e'
 }

@@ -3,7 +3,6 @@
 """
 
 import secrets
-import codecs
 import numpy as np
 import base64
 
@@ -120,16 +119,16 @@ def encrypt_fn(key, text):
     # Encrypt the text with ECB mode by the given key
     aes = AES.new(key, AES.MODE_ECB)
     encrypt_aes = aes.encrypt(pad_text)
-    encrypt_text = str(base64.encodebytes(encrypt_aes), encoding='utf-8').strip()
+    encrypt_hex = encrypt_aes.hex()
 
-    return encrypt_text
+    return encrypt_hex
 
 
-def decrypt_fn(key, encrypt_text):
+def decrypt_fn(key, encrypt_hex):
     # decrypt text
     aes = AES.new(key, AES.MODE_ECB)
-    base64_decrypted = base64.decodebytes(encrypt_text.encode(encoding='utf-8'))
-    decrypted_text = str(aes.decrypt(base64_decrypted), encoding='utf-8')
+    encrypt_byte = bytes.fromhex(encrypt_hex)
+    decrypted_text = str(aes.decrypt(encrypt_byte), encoding='utf-8')
 
     # remove the padding chars '#'
     text = decrypted_text.replace(configs.PADDING, '')
@@ -157,7 +156,7 @@ if __name__ == '__main__':
 
     key = bytes.fromhex(configs.CUSTOMER_MAP['test_account'])
 
-    encrypt_text = encrypt_fn(key, '40')
+    encrypt_text = encrypt_fn(key, 'test_account')
     print(encrypt_text)
     text = decrypt_fn(key, encrypt_text)
     print(text)

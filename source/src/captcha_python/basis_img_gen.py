@@ -91,8 +91,8 @@ class Basic_vimage_generator():
         w = resize_img.rotate(rotate_angle, expand=5)
         gen_img.paste(w, (0, 0), w)
 
-        plt.imshow(gen_img)
-        plt.show()
+        # plt.imshow(gen_img)
+        # plt.show()
 
         # print('Generated image size: {} of char: {}'.format(gen_img.size, char))
 

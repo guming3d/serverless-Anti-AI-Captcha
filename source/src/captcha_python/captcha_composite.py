@@ -145,8 +145,8 @@ def save_captcha(captcha_img, formula, answer, save_path, customer_key):
     # create file name
     hashcode = hash(str(np.asarray(captcha_img).tolist()))
 
-    encrypted_answer = encrypt_fn(answer, customer_key)
-    file_name = str(hashcode) + '_' + formula + '_' + str(answer) + '.png'
+    encrypted_answer = encrypt_fn(customer_key, str(answer))
+    file_name = str(hashcode) + '_' + formula + '_' + encrypted_answer + '.png'
     file_path = os.path.join(save_path, file_name)
 
     # save image

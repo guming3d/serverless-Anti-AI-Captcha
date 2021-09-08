@@ -120,7 +120,7 @@ def encrypt_fn(key, text):
     # Encrypt the text with ECB mode by the given key
     aes = AES.new(key, AES.MODE_ECB)
     encrypt_aes = aes.encrypt(pad_text)
-    encrypt_text = str(base64.encodebytes(encrypt_aes), encoding='utf-8')
+    encrypt_text = str(base64.encodebytes(encrypt_aes), encoding='utf-8').strip()
 
     return encrypt_text
 
@@ -157,7 +157,7 @@ if __name__ == '__main__':
 
     key = bytes.fromhex(configs.CUSTOMER_MAP['test_account'])
 
-    encrypt_text = encrypt_fn(key, 'test_account')
+    encrypt_text = encrypt_fn(key, '40')
     print(encrypt_text)
     text = decrypt_fn(key, encrypt_text)
     print(text)

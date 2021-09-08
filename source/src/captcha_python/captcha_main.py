@@ -32,8 +32,8 @@
 import argparse
 import os
 import shutil
-import tqdm
 import torch as th
+from tqdm import tqdm
 
 import configures as configs
 from utils import check_customer
@@ -50,6 +50,7 @@ def main(args):
     args.device = "cuda:0" if th.cuda.is_available() else "cpu"
     print("Use device {}".format(args.device))
 
+    args.font_path = './fonts/Baoli.ttc'
     args.raw_char_images_path = './data/raw_char_images'
     args.adv_char_images_path = './data/adv_char_images'
     args.captcha_images_path = './data/captcha_images'
@@ -72,7 +73,8 @@ def main(args):
         os.mkdir(args.trained_models_path)
 
     # Step 1: Char image generation
-    char_generator = Basic_vimage_generator(args.raw_char_images_path)
+    char_generator = Basic_vimage_generator(font_path=args.font_path,
+                                            save_path=args.raw_char_images_path)
 
     text_dict = configs.DIGIT_DICT
     char_generator.generate(text_dict, num_imgs=args.num_per_char, is_save=True)
@@ -87,7 +89,7 @@ def main(args):
     # Step 3: Generate captcha images
     compositor = Captcha_Compositor(adv_img_path=args.adv_char_images_path)
 
-    for num in tqdm(range(args.num_captcha)):
+    for num in tqdm(range(args.num_captcha_image)):
         # Step 1 generate a formula-answer pair
         f_tree = generate_formula()
         answer = f_tree.get_result()

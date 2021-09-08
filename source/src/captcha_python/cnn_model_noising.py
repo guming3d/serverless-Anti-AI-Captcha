@@ -31,7 +31,9 @@ def char_transformer():
 def noising(args, is_display=False, is_save=True):
 
     # 1. Process dataset
-    chardata = CharImageDataset(char_map=configs.CHAR_DICT, transform=char_transformer())
+    chardata = CharImageDataset(data_path=args.raw_char_images_path,
+                                char_map=configs.CHAR_DICT,
+                                transform=char_transformer())
     num_classes = chardata.get_classes()
 
     adv_dataloader = DataLoader(dataset=chardata,
@@ -51,7 +53,7 @@ def noising(args, is_display=False, is_save=True):
     else:
         raise Exception('Only support VCNN, LeNet, AlexNet, and VGG...')
 
-    model_path = os.path.join(args.model_path, args.saved_model_name)
+    model_path = os.path.join(args.trained_models_path, args.saved_model_name)
     model_stat = th.load(model_path, map_location=args.device)
     model.load_state_dict(model_stat)
     model = model.to(args.device)
@@ -89,15 +91,15 @@ def noising(args, is_display=False, is_save=True):
         label_list.append(ori_label)
 
         if ((i + 1) % 10) == 0:
-            print(i)
+            print('Noising and saving {} char images ...'.format(i))
             if is_save:
-                save_advimg(args.save_path, advimg_list, label_list)
+                save_advimg(args.adv_char_images_path, advimg_list, label_list)
 
             advimg_list = []
             label_list = []
 
     if len(advimg_list) > 0:
-        save_advimg(args.save_path, advimg_list, label_list)
+        save_advimg(args.adv_char_images_path, advimg_list, label_list)
 
 
 def save_advimg(save_path, img_list, label_list):

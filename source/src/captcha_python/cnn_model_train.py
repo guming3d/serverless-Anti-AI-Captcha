@@ -25,13 +25,15 @@ def char_transformer():
 
 def train(args):
     # 1. Process dataset
-    chardata = CharImageDataset(char_map=configs.CHAR_DICT, transform=char_transformer())
+    chardata = CharImageDataset(data_path=args.raw_char_images_path,
+                                char_map=configs.CHAR_DICT,
+                                transform=char_transformer())
     num_classes = chardata.get_classes()
 
     tr_dataloader = DataLoader(dataset=chardata,
-                               batch_size=args.batch_size,
+                               batch_size=1024,
                                shuffle=True,
-                               num_workers=args.num_worker)
+                               num_workers=0)
 
     # 2. Define models
     if args.model_name == 'VCNN':
@@ -49,11 +51,11 @@ def train(args):
 
     # 3. Define training components
     loss_fn = th.nn.CrossEntropyLoss().to(args.device)
-    optim = th.optim.Adam(model.parameters(), lr=args.lr)
+    optim = th.optim.Adam(model.parameters(), lr=0.0004)
 
     # 4. Train loop
     patience = 0
-    for epoch in range(args.epoches):
+    for epoch in range(100):
         model.train()
         for i, (img, labels) in enumerate(tr_dataloader):
             logits = model(img)
@@ -75,7 +77,7 @@ def train(args):
     # Save the trained model for adversary training
     model_stat = model.state_dict()
     saved_model_name = args.model_name + '_{:06d}'.format(np.random.randint(0, 100000)) + '.pth'
-    model_path = os.path.join(args.save_path, saved_model_name)
+    model_path = os.path.join(args.trained_models_path, saved_model_name)
     th.save(model_stat, model_path)
 
     return saved_model_name

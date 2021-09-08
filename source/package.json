@@ -47,6 +47,8 @@
     "@aws-cdk/aws-apigatewayv2": "1.120.0",
     "@aws-cdk/aws-ecs": "1.120.0",
     "@aws-cdk/aws-ecs-patterns": "1.120.0",
+    "@aws-cdk/aws-stepfunctions": "1.120.0",
+    "@aws-cdk/aws-stepfunctions-tasks": "1.120.0",
     "cdk-bootstrapless-synthesizer": "^0.7.2"
   },
   "bundledDependencies": [],

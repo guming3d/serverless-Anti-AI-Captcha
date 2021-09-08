@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as lambda from '@aws-cdk/aws-lambda';
-import {Construct, Stack, StackProps, CfnParameter, CfnParameterProps, RemovalPolicy} from '@aws-cdk/core';
+import {Construct, Stack, StackProps, CfnParameter, CfnParameterProps, RemovalPolicy, Duration} from '@aws-cdk/core';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as iam from '@aws-cdk/aws-iam';
 import {ManagedPolicy} from "@aws-cdk/aws-iam";
@@ -60,6 +60,12 @@ export class IntelligentCaptchaStack extends SolutionStack {
       default: 100,
     })
 
+    const captchaKeepingDays = new CfnParameter(this, 'MaxCaptchaKeepDays', {
+      description: 'Max number of days to keep generated Captcha in S3',
+      type: 'Number',
+      default: 7,
+    })
+
     const accessLogBucket = new Bucket(this, 'BucketAccessLog', {
       encryption: BucketEncryption.S3_MANAGED,
       removalPolicy: RemovalPolicy.RETAIN,
@@ -72,6 +78,12 @@ export class IntelligentCaptchaStack extends SolutionStack {
       removalPolicy: RemovalPolicy.RETAIN,
       serverAccessLogsBucket: accessLogBucket,
       serverAccessLogsPrefix: 'dataBucketAccessLog',
+      lifecycleRules: [
+        {
+          enabled: true,
+          expiration: Duration.days(captchaKeepingDays.valueAsNumber),
+        },
+      ],
     });
 
     const httpApi = new HttpApi(this, 'http-api-captcha', {
@@ -98,9 +110,10 @@ export class IntelligentCaptchaStack extends SolutionStack {
       readCapacity: 10,
       writeCapacity: 50,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
-      partitionKey: {name: 'date', type: dynamodb.AttributeType.STRING},
-      sortKey: {name: 'index', type: dynamodb.AttributeType.NUMBER},
+      partitionKey: {name: 'captcha_date', type: dynamodb.AttributeType.STRING},
+      sortKey: {name: 'captcha_index', type: dynamodb.AttributeType.NUMBER},
       pointInTimeRecovery: true,
+      timeToLiveAttribute: 'ExpirationTime'
     });
 
     const lambdaRole = new iam.Role(this, 'LambdaRole', {

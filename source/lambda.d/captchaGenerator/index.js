@@ -44,8 +44,8 @@ exports.handler =  function(event, context, callback) {
   let params = {
     TableName: ddbtablename,
     Key: {
-      'date': {S: currentDate},
-      'index': {N: random(0, MAXINDEX-1).toString() }
+      'captcha_date': {S: currentDate},
+      'captcha_index': {N: random(0, MAXINDEX-1).toString() }
     }
   };
 

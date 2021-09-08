@@ -48,7 +48,7 @@ main() {
       #create DDB record for this captcha file
       aws dynamodb put-item \
           --table-name $targetDDBTableName \
-          --item "{  \"date\": {\"S\": \"${CURRENT_DATE}\"},  \"index\": {\"N\": \"${j}\"}, \"captchaUrl\": {\"S\": \"${targetS3HttpPath}${item}\"}, \"result\": {\"S\": \"${result}\"} }" --return-consumed-capacity TOTAL
+          --item "{  \"captcha_date\": {\"S\": \"${CURRENT_DATE}\"},  \"captcha_index\": {\"N\": \"${j}\"}, \"captchaUrl\": {\"S\": \"${targetS3HttpPath}${item}\"}, \"result\": {\"S\": \"${result}\"} }" --return-consumed-capacity TOTAL
       	j=$((j+1));
       	echo $j
   done

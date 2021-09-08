@@ -23,7 +23,7 @@
         - The trained model name, and the path of saved model
         - The path to save noised images
     3. call forumla_gen.py, formula_converter.py, and captch_composite.py
-        - Check the configures.py for options ????
+        - Check the configures.py for options
         - The path to saved noised images
         - The path to save generated captcha images
         - The number of captcha images to generated
@@ -115,6 +115,11 @@ if __name__ == '__main__':
                        help='The name string of customer used in registration')
     parse.add_argument('--encrypted_name', type=str, default=None, required=True,
                        help='The encrypted customer name, using given Key to do AES encryption for raw customer name')
+    parse.add_argument('--is_regenerate_char', type=int, default=1, required=True,
+                       help='If need to regenerate new char images, 1 for yes, 0 for no, default=1')
+    parse.add_argument('--adv_char_images_path', type=str, default=None,
+                       help='External adv char images path. If require to regenerate, must provide this argument,'
+                            'default=None')
     parse.add_argument('--num_per_char', type=int, default=100,
                        help='The number of images generated per char, default=100')
     parse.add_argument('--model_name', type=str, default='VGG',
@@ -123,6 +128,9 @@ if __name__ == '__main__':
                        help='The name of adversary model name, default=deepfool')
     parse.add_argument('--num_captcha_image', type=int, default=10000,
                        help='The total number of captcha images to generate, default=10000')
+    parse.add_argument('--output_path', type=str, default=None, required=True,
+                       help='The file path to copy captcha images to. If use S3, should start with s3:, else consider'
+                            'it as a local file path. Default is None, means not copy')
 
     args = parse.parse_args()
     # print(args)

@@ -50,43 +50,51 @@ def main(args):
     args.device = "cuda:0" if th.cuda.is_available() else "cpu"
     print("Use device {}".format(args.device))
 
+    # Step 1: process path related task
     args.font_path = './fonts/Baoli.ttc'
-    args.raw_char_images_path = './data/raw_char_images'
-    args.adv_char_images_path = './data/adv_char_images'
-    args.captcha_images_path = './data/captcha_images'
-    args.trained_models_path = './data/trained_models'
 
+    args.raw_char_images_path = './data/raw_char_images'
     if os.path.exists(args.raw_char_images_path):
         shutil.rmtree(args.raw_char_images_path)
         os.mkdir(args.raw_char_images_path)
 
-    if os.path.exists(args.adv_char_images_path):
-        shutil.rmtree(args.adv_char_images_path)
-        os.mkdir(args.adv_char_images_path)
+    if args.is_regenerate_char == 0:
+        args.adv_char_images_path = args.external_adv_images_path
+    else:
+        args.adv_char_images_path = './data/adv_char_images'
+        if os.path.exists(args.adv_char_images_path):
+            shutil.rmtree(args.adv_char_images_path)
+            os.mkdir(args.adv_char_images_path)
 
-    if os.path.exists(args.captcha_images_path):
-        shutil.rmtree(args.captcha_images_path)
-        os.mkdir(args.captcha_images_path)
+    if args.output_path is not None:
+        args.captcha_images_path = args.output_path
+    else:
+        args.captcha_images_path = './data/captcha_images'
+        if os.path.exists(args.captcha_images_path):
+            shutil.rmtree(args.captcha_images_path)
+            os.mkdir(args.captcha_images_path)
 
+    args.trained_models_path = './data/trained_models'
     if os.path.exists(args.trained_models_path):
         shutil.rmtree(args.trained_models_path)
         os.mkdir(args.trained_models_path)
 
-    # Step 1: Char image generation
-    char_generator = Basic_vimage_generator(font_path=args.font_path,
-                                            save_path=args.raw_char_images_path)
+    # Step 2: Char image generation
+    if args.is_regenerate_char == 1:
+        char_generator = Basic_vimage_generator(font_path=args.font_path,
+                                                save_path=args.raw_char_images_path)
 
-    text_dict = configs.DIGIT_DICT
-    char_generator.generate(text_dict, num_imgs=args.num_per_char, is_save=True)
+        text_dict = configs.DIGIT_DICT
+        char_generator.generate(text_dict, num_imgs=args.num_per_char, is_save=True)
 
-    # Step 2: Add noise to each raw char image
-    # Train an image classification
-    args.saved_model_name = train(args)
+        # Step 3: Add noise to each raw char image
+        # Train an image classification
+        args.saved_model_name = train(args)
 
-    # Add noise to images
-    noising(args)
+        # Add noise to images
+        noising(args)
 
-    # Step 3: Generate captcha images
+    # Step 4: Generate captcha images
     compositor = Captcha_Compositor(adv_img_path=args.adv_char_images_path)
 
     for num in tqdm(range(args.num_captcha_image)):
@@ -119,10 +127,10 @@ if __name__ == '__main__':
                        help='If need to regenerate new char images, 1 for yes, 0 for no, default=1')
     parse.add_argument('--num_per_char', type=int, default=100,
                        help='The number of images generated per char, default=100')
-    # parse.add_argument('--model_name', type=str, default='VGG',
-    #                    help='The name of CNN model for image classification, default=VGG')
-    # parse.add_argument('--adv_model_name', type=str, default='deepfool',
-    #                    help='The name of adversary model name, default=deepfool')
+    parse.add_argument('--model_name', type=str, default='VGG',
+                       help='The name of CNN model for image classification, default=VGG')
+    parse.add_argument('--adv_model_name', type=str, default='deepfool',
+                       help='The name of adversary model name, default=deepfool')
     parse.add_argument('--num_captcha_image', type=int, default=10000,
                        help='The total number of captcha images to generate, default=10000')
     parse.add_argument('--external_adv_images_path', type=str, default=None,
@@ -144,7 +152,13 @@ if __name__ == '__main__':
         args.key = key
 
     # Check the given external paths
-
+    if (args.is_regenerate_char == 0) and (not os.path.exists(args.external_adv_images_path)):
+        raise Exception('Not require to generate the adversary char imagess, but the given char image path {} does NOT'
+                        ' exist. Please check ...'.format(args.external_adv_images_path))
+        sys.exit(2)
+    if (args.output_path is not None) and (not os.path.exists(args.output_path)):
+        raise Exception('The given output path {} does NOT exist. Please check ...'.format(args.output_path))
+        sys.exit(2)
 
     # Pass security check
     main(args)

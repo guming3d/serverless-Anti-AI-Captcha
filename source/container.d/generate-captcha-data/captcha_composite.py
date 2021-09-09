@@ -27,7 +27,7 @@ class Captcha_Compositor():
                  width=configs.BK_WIDTH,
                  height=configs.BK_HEIGHT,
                  bk_color='b',
-                 adv_img_path='../outputs/adv_img'):
+                 adv_img_path='./data/adv_images_path'):
         self.width = width
         self.height = height
         self.adv_img_path = adv_img_path

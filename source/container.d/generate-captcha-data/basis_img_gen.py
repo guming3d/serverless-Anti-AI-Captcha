@@ -19,7 +19,7 @@ import configures as configs
 class Basic_vimage_generator():
 
     def __init__(self,
-                 font_path='./Baoli.ttc',
+                 font_path='./fonts/Baoli.ttc',
                  fg_color=255,
                  bk_color=0,
                  font_size=24,

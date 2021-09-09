@@ -4,7 +4,8 @@ import { IntelligentCaptchaStack } from './stack';
 
 const app = new App();
 
-new IntelligentCaptchaStack(app, 'IntelligentCaptchaStack', { synthesizer: newSynthesizer() });
+const envBJS = { account: '812669741844', region: 'cn-north-1' };
+new IntelligentCaptchaStack(app, 'IntelligentCaptchaStack', { synthesizer: newSynthesizer(), env:envBJS });
 
 app.synth();
 

@@ -10,6 +10,7 @@ import {CorsHttpMethod, HttpApi, HttpMethod} from "@aws-cdk/aws-apigatewayv2";
 import * as apiGatewayIntegrations from '@aws-cdk/aws-apigatewayv2-integrations';
 import * as logs from '@aws-cdk/aws-logs';
 import {Bucket, BucketEncryption} from "@aws-cdk/aws-s3";
+import {CaptchaGeneratorStack} from "./captcha-generate";
 
 export class SolutionStack extends Stack {
   private _paramGroup: { [grpname: string]: CfnParameter[] } = {}
@@ -143,7 +144,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
     getCaptchaLambda.node.addDependency(captcha_index_table);
 
     //Offline Captcha generator stack with ECS schedule tasks
-    const captchaLoaderStack = new CaptchaLoaderStack(this, 'CaptchaGenerator', {
+    const captchaLoaderStack = new CaptchaLoaderStack(this, 'CaptchaLoader', {
       ddb_name : captcha_index_table.tableName,
       captcha_number : maxDailyIndex.valueAsString,
       captcha_s3_bucket : captcha_s3_bucket.bucketName
@@ -152,6 +153,14 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     captchaLoaderStack.node.addDependency(captcha_index_table);
     captchaLoaderStack.node.addDependency(captcha_s3_bucket);
+
+    const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {
+      ddb_name : captcha_index_table.tableName,
+      captcha_number : maxDailyIndex.valueAsString,
+      captcha_s3_bucket : captcha_s3_bucket.bucketName
+      }
+    );
+    captchaGeneratorStack.node.addDependency(captchaLoaderStack);
 
     const getCaptchaLambdaIntegration = new apiGatewayIntegrations.LambdaProxyIntegration({
       handler: getCaptchaLambda,

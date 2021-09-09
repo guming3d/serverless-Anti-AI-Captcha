@@ -4,3 +4,4 @@ scrypt
 pycryptodome
 torch
 torchvision
+tqdm

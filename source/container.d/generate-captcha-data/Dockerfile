@@ -2,6 +2,20 @@ FROM pytorch/pytorch:latest
 
 WORKDIR /app
 
+#RUN yum install -y tar gzip unzip openssl awk
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends tar
+RUN apt-get install -y --no-install-recommends curl
+RUN apt-get install -y --no-install-recommends gzip
+RUN apt-get install -y --no-install-recommends unzip
+RUN apt-get install -y --no-install-recommends openssl
+RUN apt-get install -y --no-install-recommends gawk
+
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && rm -rf awscliv2.zip aws/
+
 COPY container.d/generate-captcha-data/cnn_models/__init__.py  /app/cnn_models/
 COPY container.d/generate-captcha-data/cnn_models/models.py  /app/cnn_models/
 COPY container.d/generate-captcha-data/fonts/Baoli.ttc  /app/fronts/
@@ -18,7 +32,7 @@ COPY container.d/generate-captcha-data/formula_gen.py  /app/
 COPY container.d/generate-captcha-data/requirements.txt  /app/
 COPY container.d/generate-captcha-data/utils.py  /app/
 COPY container.d/generate-captcha-data/captcha-calling-wrapper.py  /app/
-COPY container.d/generate-captcha-data/upload-to-S3.sh  /app/
+COPY container.d/generate-captcha-data/upload-to-S3-ddb.sh  /app/
 
 RUN cd /app && pip install -r requirements.txt
 

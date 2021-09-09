@@ -121,10 +121,10 @@ if __name__ == '__main__':
                        help='The number of images generated per char, default=100')
     parse.add_argument('--model_name', type=str, default='VGG',
                        help='The name of CNN model for image classification, default=VGG')
-    # parse.add_argument('--adv_model_name', type=str, default='deepfool',
-    #                    help='The name of adversary model name, default=deepfool')
-    # parse.add_argument('--num_captcha_image', type=int, default=10000,
-    #                    help='The total number of captcha images to generate, default=10000')
+    parse.add_argument('--adv_model_name', type=str, default='deepfool',
+                       help='The name of adversary model name, default=deepfool')
+    parse.add_argument('--num_captcha_image', type=int, default=10000,
+                       help='The total number of captcha images to generate, default=10000')
 
     args = parse.parse_args()
     # print(args)

@@ -25,23 +25,33 @@ logger.info("s3 bucket name is "+s3BucketName)
 currentDate = datetime.date.today().strftime("%Y/%m/%d/")
 logger.info("today is "+currentDate)
 
-captchaFactory=Path(os.path.abspath(__file__)).parent.joinpath('python /app/captcha_main.py')
+# captchaFactory=Path(os.path.abspath(__file__)).parent.joinpath('python /app/captcha_main.py')
+# captcha_main.py --customer_name test_account --encrypted_name b6ec0e74e15bb1f7aabe793a5173fd02 --num_per_char 10 --num_captcha_image 10
+dataArgs = [
+            'python',
+            '/app/captcha_main.py',
+            '--customer_name',
+            'test_account',
+            '--encrypted_name',
+            'b6ec0e74e15bb1f7aabe793a5173fd02',
+            '--num_per_char',
+            '10',
+            '--num_captcha_image',
+            captchaNumber
+            ]
+
+# subprocess.check_call([captchaFactory] + list(dataArgs))
+subprocess.check_call(list(dataArgs))
+
+dynamoDBGenerator=Path(os.path.abspath(__file__)).parent.joinpath('upload-to-s3-ddb.sh')
 dataArgs = [s3BucketName,
             currentDate,
             ddbName,
             captchaNumber,
-            region]
+            region,
+            '/app/data/captcha_images/']
 
-subprocess.check_call([captchaFactory] + list(dataArgs))
-
-dynamoDBGenerator=Path(os.path.abspath(__file__)).parent.joinpath('upload-to-s3.sh')
-dataArgs = [s3BucketName,
-            currentDate,
-            ddbName,
-            captchaNumber,
-            region]
-
-subprocess.check_call([captchaFactory] + list(dataArgs))
+# subprocess.check_call([captchaFactory] + list(dataArgs))
 
 
 

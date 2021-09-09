@@ -2,3 +2,5 @@ deeprobust
 pillow==8.0.0
 scrypt
 pycryptodome
+torch
+torchvision

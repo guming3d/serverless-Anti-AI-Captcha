@@ -115,16 +115,16 @@ if __name__ == '__main__':
                        help='The name string of customer used in registration')
     parse.add_argument('--encrypted_name', type=str, default=None, required=True,
                        help='The encrypted customer name, using given Key to do AES encryption for raw customer name')
-    parse.add_argument('--is_regenerate_char', type=int, default=1, required=True,
-                       help='If need to regenerate new char images, 1 for yes, 0 for no, default=1')
+    # parse.add_argument('--is_regenerate_char', type=int, default=1, required=True,
+    #                    help='If need to regenerate new char images, 1 for yes, 0 for no, default=1')
     parse.add_argument('--num_per_char', type=int, default=100,
                        help='The number of images generated per char, default=100')
     parse.add_argument('--model_name', type=str, default='VGG',
                        help='The name of CNN model for image classification, default=VGG')
-    parse.add_argument('--adv_model_name', type=str, default='deepfool',
-                       help='The name of adversary model name, default=deepfool')
-    parse.add_argument('--num_captcha_image', type=int, default=10000,
-                       help='The total number of captcha images to generate, default=10000')
+    # parse.add_argument('--adv_model_name', type=str, default='deepfool',
+    #                    help='The name of adversary model name, default=deepfool')
+    # parse.add_argument('--num_captcha_image', type=int, default=10000,
+    #                    help='The total number of captcha images to generate, default=10000')
 
     args = parse.parse_args()
     # print(args)

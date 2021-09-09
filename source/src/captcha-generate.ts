@@ -11,8 +11,13 @@ import * as path from "path";
 import * as logs from "@aws-cdk/aws-logs";
 import {NodejsFunction} from "@aws-cdk/aws-lambda-nodejs";
 import {Runtime, Tracing} from "@aws-cdk/aws-lambda";
+import { Rule, Schedule } from '@aws-cdk/aws-events';
+import { SfnStateMachine } from '@aws-cdk/aws-events-targets';
 
 export interface CaptchaGeneratorStackProps extends NestedStackProps {
+  readonly ddb_name: string,
+  readonly captcha_number: string,
+  readonly captcha_s3_bucket: string
 }
 
 export class CaptchaGeneratorStack extends NestedStack {
@@ -20,18 +25,21 @@ export class CaptchaGeneratorStack extends NestedStack {
   constructor(scope: Construct, id: string, props: CaptchaGeneratorStackProps) {
     super(scope, id, props);
 
+    const ddbName = props.ddb_name
+    const captchaNumber = props.captcha_number
+    const s3_bucket_name = props.captcha_s3_bucket
+
     // create states of step functions for pipeline
     const failure = new sfn.Fail(this, 'Fail', {
       comment: 'Captcha Producer workflow failed',
     });
     const vpc = ec2.Vpc.fromLookup(this, 'ExistingVpc', {
-      vpcName: 'IntelligentCaptchaStack/CaptchaGenerator/MyVpc,'
+      vpcName: 'IntelligentCaptchaStack/CaptchaLoader/MyVpc'
     });
 
-    const cluster = new ecs.Cluster(this, 'CaptchaGenerating', {
+    const cluster = new ecs.Cluster(this, 'CaptchaGeneratingCluster', {
       vpc: vpc
     });
-
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'CaptchaGeneratingTask', {
       memoryLimitMiB: 2048,
@@ -50,7 +58,7 @@ export class CaptchaGeneratorStack extends NestedStack {
       ignoreMode: IgnoreMode.GLOB,
     });
 
-    const containerDefinition = taskDefinition.addContainer('TheContainer', {
+    const containerDefinition = taskDefinition.addContainer('TheCaptchaGeneratingContainer', {
       image: ContainerImage.fromDockerImageAsset(dailyCaptchaGeneratorImage),
       cpu: 256,
       memoryLimitMiB: 2048,
@@ -64,10 +72,10 @@ export class CaptchaGeneratorStack extends NestedStack {
       }),
       environment:
         {
-          // CAPTCHA_DDB_NAME: ddbName,
-          // CAPTCHA_NUMBER: captchaNumber,
-          // REGION_NAME: Aws.REGION,
-          // S3_BUCKET_NAME: s3_bucket_name
+          CAPTCHA_DDB_NAME: ddbName,
+          CAPTCHA_NUMBER: captchaNumber,
+          REGION_NAME: Aws.REGION,
+          S3_BUCKET_NAME: s3_bucket_name
         },
     });
 
@@ -117,7 +125,7 @@ export class CaptchaGeneratorStack extends NestedStack {
           '--neptune_iam_role_arn',
           // props.neptune.loadRole,
         ],
-        environment: [{name: 'SOME_KEY', value: sfn.JsonPath.stringAt('$.SomeKey')}],
+        // environment: [{name: 'SOME_KEY', value: sfn.JsonPath.stringAt('$.SomeKey')}],
       }],
       launchTarget: new EcsFargateLaunchTarget({
         platformVersion: FargatePlatformVersion.VERSION1_4,
@@ -129,7 +137,7 @@ export class CaptchaGeneratorStack extends NestedStack {
 
     const definition = captchaProducerTriggerTask.next(runTask)
 
-    new StateMachine(this, 'CaptchaProducingPipeline', {
+    const captchaStateMachine = new StateMachine(this, 'CaptchaProducingPipeline', {
       definition,
       logs: {
         destination: new logs.LogGroup(this, 'FraudDetectionLogGroup', {
@@ -140,6 +148,12 @@ export class CaptchaGeneratorStack extends NestedStack {
         level: LogLevel.ALL,
       },
       tracingEnabled: true,
+    });
+
+    //eventBridge to trigger the lambda daily
+    new Rule(this, 'CaptchaSchedulingRule', {
+      schedule: Schedule.cron({ minute: '0', hour: '16' }),
+      targets: [new SfnStateMachine(captchaStateMachine)],
     });
 
   }

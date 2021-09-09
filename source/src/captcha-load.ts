@@ -25,6 +25,7 @@ export class CaptchaLoaderStack extends NestedStack {
     const s3_bucket_name = props.captcha_s3_bucket
     const vpc = new ec2.Vpc(this, "MyVpc", {
       maxAzs: 3 // Default is all AZs in region
+
     });
 
     const cluster = new ecs.Cluster(this, "CaptchaGeneratorCluster", {

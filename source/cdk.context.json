@@ -1,0 +1,68 @@
+{
+  "availability-zones:account=812669741844:region=cn-north-1": [
+    "cn-north-1a",
+    "cn-north-1b",
+    "cn-north-1d"
+  ],
+  "vpc-provider:account=812669741844:filter.tag:Name=IntelligentCaptchaStack/CaptchaGenerator/MyVpc:region=cn-north-1:returnAsymmetricSubnets=true": {
+    "vpcId": "vpc-014581c1aa0780166",
+    "vpcCidrBlock": "10.0.0.0/16",
+    "availabilityZones": [],
+    "subnetGroups": []
+  },
+  "vpc-provider:account=812669741844:filter.tag:Name=IntelligentCaptchaStack/CaptchaLoader/MyVpc:region=cn-north-1:returnAsymmetricSubnets=true": {
+    "vpcId": "vpc-02384da0af25d207d",
+    "vpcCidrBlock": "10.0.0.0/16",
+    "availabilityZones": [],
+    "subnetGroups": [
+      {
+        "name": "Private",
+        "type": "Private",
+        "subnets": [
+          {
+            "subnetId": "subnet-089dde9b97489120f",
+            "cidr": "10.0.96.0/19",
+            "availabilityZone": "cn-north-1a",
+            "routeTableId": "rtb-094d966c3fa12a4a5"
+          },
+          {
+            "subnetId": "subnet-041a5b48ef6a06ae9",
+            "cidr": "10.0.128.0/19",
+            "availabilityZone": "cn-north-1b",
+            "routeTableId": "rtb-038f9f5991d8b923f"
+          },
+          {
+            "subnetId": "subnet-078c282b9ffd93823",
+            "cidr": "10.0.160.0/19",
+            "availabilityZone": "cn-north-1d",
+            "routeTableId": "rtb-026c251671da6e95c"
+          }
+        ]
+      },
+      {
+        "name": "Public",
+        "type": "Public",
+        "subnets": [
+          {
+            "subnetId": "subnet-0475512b664d1035d",
+            "cidr": "10.0.0.0/19",
+            "availabilityZone": "cn-north-1a",
+            "routeTableId": "rtb-021a9cebb1fd87589"
+          },
+          {
+            "subnetId": "subnet-0d46ab16a6ef8f34a",
+            "cidr": "10.0.32.0/19",
+            "availabilityZone": "cn-north-1b",
+            "routeTableId": "rtb-053c48c87c4b77d9d"
+          },
+          {
+            "subnetId": "subnet-0113d0b2684d2d41e",
+            "cidr": "10.0.64.0/19",
+            "availabilityZone": "cn-north-1d",
+            "routeTableId": "rtb-00239000fd47d8060"
+          }
+        ]
+      }
+    ]
+  }
+}

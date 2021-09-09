@@ -17,8 +17,10 @@ COPY container.d/generate-captcha-data/formula_converter.py  /app/
 COPY container.d/generate-captcha-data/formula_gen.py  /app/
 COPY container.d/generate-captcha-data/requirements.txt  /app/
 COPY container.d/generate-captcha-data/utils.py  /app/
+COPY container.d/generate-captcha-data/captcha-calling-wrapper.py  /app/
+COPY container.d/generate-captcha-data/upload-to-S3.sh  /app/
 
 RUN cd /app && pip install -r requirements.txt
 
-ENTRYPOINT ["python", "/app/captcha_main.py"]
+ENTRYPOINT ["python", "/app/captcha-calling-wrapper.py"]
 

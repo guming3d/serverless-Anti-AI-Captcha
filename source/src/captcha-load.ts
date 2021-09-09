@@ -9,15 +9,15 @@ import { ContainerImage } from "@aws-cdk/aws-ecs";
 import { DockerImageAsset } from '@aws-cdk/aws-ecr-assets';
 import { Aws, Construct, IgnoreMode, NestedStack, NestedStackProps } from '@aws-cdk/core';
 
-export interface CaptchaGeneratorStackProps extends NestedStackProps {
+export interface CaptchaLoaderStackProps extends NestedStackProps {
   readonly ddb_name: string,
   readonly captcha_number: string,
   readonly captcha_s3_bucket: string
 }
 
-export class CaptchaGeneratorStack extends NestedStack {
+export class CaptchaLoaderStack extends NestedStack {
 
-  constructor(scope: Construct, id: string, props: CaptchaGeneratorStackProps) {
+  constructor(scope: Construct, id: string, props: CaptchaLoaderStackProps) {
     super(scope, id, props);
 
     const ddbName = props.ddb_name
@@ -49,15 +49,15 @@ export class CaptchaGeneratorStack extends NestedStack {
       ignoreMode: IgnoreMode.GLOB,
     });
 
-    taskDefinitionDailyGenerateCaptcha.addContainer("DailyCaptchaGeneratorContainer", {
+    taskDefinitionDailyGenerateCaptcha.addContainer("DailyCaptchaLoadContainer", {
       image: ContainerImage.fromDockerImageAsset(dailyCaptchaGeneratorImage),
       cpu: 256,
       memoryLimitMiB: 2048,
       memoryReservationMiB: 2048,
       logging: ecs.LogDriver.awsLogs({
         streamPrefix: "ecs",
-        logGroup: new logs.LogGroup(this, "DailyGenerateCaptchaLogGroup", {
-          logGroupName: "/ecs/DailyGenerateCaptchaLogGroup/ContainerLogs",
+        logGroup: new logs.LogGroup(this, "DailyLoadCaptchaLogGroup", {
+          logGroupName: "/ecs/DailyLoadCaptchaLogGroup/ContainerLogs",
           retention: logs.RetentionDays.ONE_WEEK
         })
       }),

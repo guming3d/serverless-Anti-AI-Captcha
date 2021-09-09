@@ -5,7 +5,7 @@ import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as iam from '@aws-cdk/aws-iam';
 import {ManagedPolicy} from "@aws-cdk/aws-iam";
 import * as cdk from '@aws-cdk/core';
-import {CaptchaGeneratorStack} from "./captcha-generator";
+import {CaptchaLoaderStack} from "./captcha-load";
 import {CorsHttpMethod, HttpApi, HttpMethod} from "@aws-cdk/aws-apigatewayv2";
 import * as apiGatewayIntegrations from '@aws-cdk/aws-apigatewayv2-integrations';
 import * as logs from '@aws-cdk/aws-logs';
@@ -143,15 +143,15 @@ export class IntelligentCaptchaStack extends SolutionStack {
     getCaptchaLambda.node.addDependency(captcha_index_table);
 
     //Offline Captcha generator stack with ECS schedule tasks
-    const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {
+    const captchaLoaderStack = new CaptchaLoaderStack(this, 'CaptchaGenerator', {
       ddb_name : captcha_index_table.tableName,
       captcha_number : maxDailyIndex.valueAsString,
       captcha_s3_bucket : captcha_s3_bucket.bucketName
       }
     );
 
-    captchaGeneratorStack.node.addDependency(captcha_index_table);
-    captchaGeneratorStack.node.addDependency(captcha_s3_bucket);
+    captchaLoaderStack.node.addDependency(captcha_index_table);
+    captchaLoaderStack.node.addDependency(captcha_s3_bucket);
 
     const getCaptchaLambdaIntegration = new apiGatewayIntegrations.LambdaProxyIntegration({
       handler: getCaptchaLambda,

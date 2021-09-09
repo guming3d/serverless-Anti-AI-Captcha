@@ -10,6 +10,7 @@ main() {
   local targetDDBTableName=$3
   local captchaNumber=$4
   local regionName=$5
+  local captchaImageDirectory=$6
 
   export WORK_DIR=`mktemp -d --suffix '-captcha-data' -p "$tmpFolder"`
 
@@ -64,11 +65,11 @@ function cleanup {
 # Makes sure that we provided (from the cli)
 # enough arguments.
 check_args() {
-  if (($# != 5)); then
+  if (($# != 6)); then
     echo "Error:
     Three arguments must be provided - $# provided.
     Usage:
-      $0 <target bucket path> <target DDB table name> <totalCaptcha number> <region name>
+      $0 <target bucket path> <target DDB table name> <totalCaptcha number> <region name> <directory name>
 Aborting."
     exit 1
   fi

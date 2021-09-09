@@ -21,7 +21,6 @@ export interface ParametersOutput {
   };
 }
 
-export const DEFAULT_TRAINING_TIMEOUT = 90 * 60;
 export const triggerHandler: TriggerHandler = async (para, _context) => {
   console.info(`Receiving captcha generating event ${JSON.stringify(para, null, 2)}.`);
 

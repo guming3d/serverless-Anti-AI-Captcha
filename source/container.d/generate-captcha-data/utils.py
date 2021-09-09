@@ -2,9 +2,11 @@
     Various utility functions for different files
 """
 
+import os
 import secrets
 import numpy as np
-import base64
+import boto3
+from botocore.exceptions import ClientError
 
 import scrypt
 from Crypto.Cipher import AES
@@ -146,6 +148,29 @@ def generate_customer_key(customer_name):
     key = raw_key.hex()
 
     return key
+
+
+def upload_file(file_name, bucket, object_name=None):
+    """Upload a file to an S3 bucket
+
+    :param file_name: File to upload
+    :param bucket: Bucket to upload to, just the name of bucket, not start with 's3://'
+    :param object_name: S3 object name, including all prefix. If not specified then file_name is used
+    :return: True if file was uploaded, else False
+    """
+
+    # If S3 object_name was not specified, use file_name
+    if object_name is None:
+        object_name = os.path.basename(file_name)
+
+    # Upload the file
+    s3_client = boto3.client('s3')
+    try:
+        response = s3_client.upload_file(file_name, bucket, object_name)
+    except ClientError as e:
+        print(e)
+        return False
+    return True
 
 
 if __name__ == '__main__':

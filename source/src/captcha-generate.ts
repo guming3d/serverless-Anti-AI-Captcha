@@ -13,6 +13,7 @@ import {NodejsFunction} from "@aws-cdk/aws-lambda-nodejs";
 import {Runtime, Tracing} from "@aws-cdk/aws-lambda";
 import { Rule, Schedule } from '@aws-cdk/aws-events';
 import { SfnStateMachine } from '@aws-cdk/aws-events-targets';
+import * as iam from "@aws-cdk/aws-iam";
 
 export interface CaptchaGeneratorStackProps extends NestedStackProps {
   readonly ddb_name: string,
@@ -42,8 +43,8 @@ export class CaptchaGeneratorStack extends NestedStack {
     });
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'CaptchaGeneratingTask', {
-      memoryLimitMiB: 2048,
-      cpu: 256,
+      memoryLimitMiB: 8192,
+      cpu: 2048,
     });
 
     const dailyCaptchaGeneratorImage = new DockerImageAsset(this, 'DailyCaptchaGeneratingImage', {
@@ -58,11 +59,22 @@ export class CaptchaGeneratorStack extends NestedStack {
       ignoreMode: IgnoreMode.GLOB,
     });
 
+    const permissions = new iam.PolicyStatement({
+      actions: [
+        "s3:*",
+        "cloudwatch:*",
+        "dynamodb:*"
+      ],
+      resources: ["*"]
+    })
+
+    taskDefinition.addToTaskRolePolicy(permissions);
+
     const containerDefinition = taskDefinition.addContainer('TheCaptchaGeneratingContainer', {
       image: ContainerImage.fromDockerImageAsset(dailyCaptchaGeneratorImage),
-      cpu: 256,
-      memoryLimitMiB: 2048,
-      memoryReservationMiB: 2048,
+      cpu: 2048,
+      memoryLimitMiB: 8192,
+      memoryReservationMiB: 8192,
       logging: ecs.LogDriver.awsLogs({
         streamPrefix: "ecs",
         logGroup: new logs.LogGroup(this, "DailyGenerateCaptchaLogGroup", {

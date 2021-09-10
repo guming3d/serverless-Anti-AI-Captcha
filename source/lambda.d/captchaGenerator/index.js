@@ -27,7 +27,13 @@ exports.handler =  function(event, context, callback) {
     });
   }
 
-  let currentDate = dateFormat(new Date (), "%Y%m%d", false);
+  //Convert to local timezone
+  function convertTZ(date, tzString) {
+    return new Date((typeof date === "string" ? new Date(date) : date).toLocaleString("en-US", {timeZone: tzString}));
+  }
+  const convertedDate = convertTZ(new Date(),"Asia/Shanghai")
+
+  let currentDate = dateFormat(convertedDate, "%Y%m%d", false);
   console.debug("current date is " + currentDate);
 
   //get a random index from 1 to MAXINDEX

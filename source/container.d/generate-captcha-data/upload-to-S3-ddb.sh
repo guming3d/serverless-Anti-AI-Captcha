@@ -12,28 +12,11 @@ main() {
   local regionName=$5
   local captchaImageDirectory=$6
 
-#  export WORK_DIR=`mktemp -d --suffix '-captcha-data' -p "$tmpFolder"`
-
-#  if [[ ! "$WORK_DIR" || ! -d "$WORK_DIR" ]]; then
-#    echo "Could not create temp dir under $tmpFolder"
-#    exit 1
-#  fi
-
-#  DATA_DIR="$WORK_DIR"/captcha-data
-#  mkdir -p "$DATA_DIR"
-
   TOMORROW_DATE=$(date --date="next day" '+%Y%m%d')
   YEAR=$(date --date="next day" '+%Y')
   MONTH=$(date --date="next day" '+%m')
   DAY=$(date --date="next day" '+%d')
   S3_PREFIX="${YEAR}/${MONTH}/${DAY}/"
-#  x=$captchaNumber;
-#  while [ $x -gt 0 ];
-#  do
-#    tmpName=`sed "s/[^a-zA-Z0-9]//g" <<< $(openssl rand -base64 17)`
-#    touch ${DATA_DIR}/$CURRENT_DATE-${tmpName}-RESULTSTRING.png
-#    x=$(($x-1));
-#  done
 
   trap cleanup EXIT
 
@@ -50,6 +33,7 @@ main() {
   do
       encrypted_result=`echo $item|awk -F_ '{print $2}'|awk -F. '{print $1}'`
 
+      #decrypt the result using the user key
       result=`python -c "import utils as util ;key = bytes.fromhex(\"f0eeb0d35c0b014bb7141e80b9089e7e\"); text = util.decrypt_fn( key, \"${encrypted_result}\"); print(text)"`
       echo "result of $item is $result"
       #create DDB record for this captcha file
@@ -61,11 +45,11 @@ main() {
   done
 
 }
-#
+
 # deletes the temp directory
 function cleanup {
-  rm -rf "$WORK_DIR"
-  echo "Deleted temp working directory $WORK_DIR"
+  rm -rf "$captchaImageDirectory"
+  echo "Deleted temp working directory $captchaImageDirectory"
 }
 
 # Makes sure that we provided (from the cli)

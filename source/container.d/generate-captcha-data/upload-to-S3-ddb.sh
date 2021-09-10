@@ -6,39 +6,43 @@ export PATH=/opt/awscli/:$PATH
 main() {
   check_args "$@"
   local s3BucketName=$1
-  local s3PrefixName=$2
+  local currentDate=$2
   local targetDDBTableName=$3
   local captchaNumber=$4
   local regionName=$5
   local captchaImageDirectory=$6
 
-  export WORK_DIR=`mktemp -d --suffix '-captcha-data' -p "$tmpFolder"`
+#  export WORK_DIR=`mktemp -d --suffix '-captcha-data' -p "$tmpFolder"`
 
-  if [[ ! "$WORK_DIR" || ! -d "$WORK_DIR" ]]; then
-    echo "Could not create temp dir under $tmpFolder"
-    exit 1
-  fi
+#  if [[ ! "$WORK_DIR" || ! -d "$WORK_DIR" ]]; then
+#    echo "Could not create temp dir under $tmpFolder"
+#    exit 1
+#  fi
 
-  DATA_DIR="$WORK_DIR"/captcha-data
-  mkdir -p "$DATA_DIR"
-  CURRENT_DATE=$(date '+%Y%m%d')
-  x=$captchaNumber;
-  while [ $x -gt 0 ];
-  do
-    tmpName=`sed "s/[^a-zA-Z0-9]//g" <<< $(openssl rand -base64 17)`
-    touch ${DATA_DIR}/$CURRENT_DATE-${tmpName}-RESULTSTRING.png
-    x=$(($x-1));
-  done
+#  DATA_DIR="$WORK_DIR"/captcha-data
+#  mkdir -p "$DATA_DIR"
+
+  TOMORROW_DATE=$(date -v+1d '+%Y%m%d')
+  YEAR=$(date -v+1d '+%Y')
+  MONTH=$(date -v+1d '+%m')
+  DAY=$(date -v+1d '+%d')
+  S3_PREFIX="${YEAR}/${MONTH}/${DAY}/"
+#  x=$captchaNumber;
+#  while [ $x -gt 0 ];
+#  do
+#    tmpName=`sed "s/[^a-zA-Z0-9]//g" <<< $(openssl rand -base64 17)`
+#    touch ${DATA_DIR}/$CURRENT_DATE-${tmpName}-RESULTSTRING.png
+#    x=$(($x-1));
+#  done
 
   trap cleanup EXIT
 
-
   #Copy the generated Captcha to S3
-  targetS3Path="s3://${s3BucketName}/${s3PrefixName}"
+  targetS3Path="s3://${s3BucketName}/${S3_PREFIX}"
   targetS3HttpPath="https://${s3BucketName}.s3.${regionName}.amazonaws.com.cn/${s3PrefixName}"
   echo "target s3 path is ${targetS3Path}"
   echo "target s3 http path is ${targetS3HttpPath}"
-  aws s3 cp ${DATA_DIR} ${targetS3Path} --recursive
+  aws s3 cp ${captchaImageDirectory} ${targetS3Path} --recursive
 
   #Generating DDB from the s3 captcha file
   j=0
@@ -49,7 +53,7 @@ main() {
       #create DDB record for this captcha file
       aws dynamodb put-item \
           --table-name $targetDDBTableName \
-          --item "{  \"captcha_date\": {\"S\": \"${CURRENT_DATE}\"},  \"captcha_index\": {\"N\": \"${j}\"}, \"captchaUrl\": {\"S\": \"${targetS3HttpPath}${item}\"}, \"result\": {\"S\": \"${result}\"} }" --return-consumed-capacity TOTAL
+          --item "{  \"captcha_date\": {\"S\": \"${TOMORROW_DATE}\"},  \"captcha_index\": {\"N\": \"${j}\"}, \"captchaUrl\": {\"S\": \"${targetS3HttpPath}${item}\"}, \"result\": {\"S\": \"${result}\"} }" --return-consumed-capacity TOTAL
       	j=$((j+1));
       	echo $j
   done

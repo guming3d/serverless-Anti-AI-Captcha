@@ -53,7 +53,7 @@ dataArgs = [s3BucketName,
             region,
             '/app/data/captcha_images/']
 
-# subprocess.check_call([captchaFactory] + list(dataArgs))
+subprocess.check_call([dynamoDBGenerator] + list(dataArgs))
 
 
 

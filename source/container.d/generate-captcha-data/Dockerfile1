@@ -42,5 +42,5 @@ RUN mkdir -p /app/data/raw_char_images
 RUN mkdir -p /app/data/trained_models
 
 
-ENTRYPOINT ["python", "/app/captcha-calling-wrapper.py"]
+ENTRYPOINT ["python", "/app/captcha_main.py"]
 

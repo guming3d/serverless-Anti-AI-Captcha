@@ -37,7 +37,9 @@ dataArgs = [
             '--num_per_char',
             '10',
             '--num_captcha_image',
-            captchaNumber
+            captchaNumber,
+            '--is_regenerate_char',
+            '1'
             ]
 
 # subprocess.check_call([captchaFactory] + list(dataArgs))

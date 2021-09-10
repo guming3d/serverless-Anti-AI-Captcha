@@ -35,6 +35,12 @@ COPY container.d/generate-captcha-data/captcha-calling-wrapper.py  /app/
 COPY container.d/generate-captcha-data/upload-to-S3-ddb.sh  /app/
 
 RUN cd /app && pip install -r requirements.txt
+RUN mkdir -p /app/data/
+RUN mkdir -p /app/data/adv_char_images
+RUN mkdir -p /app/data/captcha_images
+RUN mkdir -p /app/data/raw_char_images
+RUN mkdir -p /app/data/trained_models
+
 
 ENTRYPOINT ["python", "/app/captcha-calling-wrapper.py"]
 

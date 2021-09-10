@@ -9,7 +9,7 @@ import {CaptchaLoaderStack} from "./captcha-load";
 import {CorsHttpMethod, HttpApi, HttpMethod} from "@aws-cdk/aws-apigatewayv2";
 import * as apiGatewayIntegrations from '@aws-cdk/aws-apigatewayv2-integrations';
 import * as logs from '@aws-cdk/aws-logs';
-import {Bucket, BucketEncryption} from "@aws-cdk/aws-s3";
+import {BlockPublicAccess, Bucket, BucketEncryption} from "@aws-cdk/aws-s3";
 import {CaptchaGeneratorStack} from "./captcha-generate";
 
 export class SolutionStack extends Stack {
@@ -85,6 +85,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
           expiration: Duration.days(captchaKeepingDays.valueAsNumber),
         },
       ],
+      blockPublicAccess: new BlockPublicAccess({ blockPublicPolicy: false })
     });
 
     const httpApi = new HttpApi(this, 'http-api-captcha', {

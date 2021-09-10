@@ -67,3 +67,4 @@ regional-s3-assets/
 cdk.out/
 cdk.*.out/
 /source/container.d/generate-captcha-data/data/
+/source/container.d/generate-captcha-data/Dockerfile_local

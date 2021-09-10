@@ -45,15 +45,15 @@ dataArgs = [
 # subprocess.check_call([captchaFactory] + list(dataArgs))
 subprocess.check_call(list(dataArgs))
 
-dynamoDBGenerator=Path(os.path.abspath(__file__)).parent.joinpath('upload-to-s3-ddb.sh')
-dataArgs = [s3BucketName,
+dynamoDBGenerator=Path(os.path.abspath(__file__)).parent.joinpath('upload-to-S3-ddb.sh')
+dataArgs2 = [s3BucketName,
             currentDate,
             ddbName,
             captchaNumber,
             region,
             '/app/data/captcha_images/']
 
-subprocess.check_call([dynamoDBGenerator] + list(dataArgs))
+subprocess.check_call([dynamoDBGenerator] + list(dataArgs2))
 
 
 

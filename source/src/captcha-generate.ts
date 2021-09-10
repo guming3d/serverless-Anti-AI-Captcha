@@ -142,7 +142,7 @@ export class CaptchaGeneratorStack extends NestedStack {
       logs: {
         destination: new logs.LogGroup(this, 'FraudDetectionLogGroup', {
           retention: logs.RetentionDays.SIX_MONTHS,
-          logGroupName: `/aws/vendedlogs/states/fraud-detetion/training-pipeline/${this.stackName}`,
+          logGroupName: `/aws/vendedlogs/states/captcha-generating-pipeline/${this.stackName}`,
         }),
         includeExecutionData: true,
         level: LogLevel.ALL,

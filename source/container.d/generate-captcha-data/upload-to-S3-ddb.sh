@@ -22,10 +22,10 @@ main() {
 #  DATA_DIR="$WORK_DIR"/captcha-data
 #  mkdir -p "$DATA_DIR"
 
-  TOMORROW_DATE=$(date -v+1d '+%Y%m%d')
-  YEAR=$(date -v+1d '+%Y')
-  MONTH=$(date -v+1d '+%m')
-  DAY=$(date -v+1d '+%d')
+  TOMORROW_DATE=$(date --date="next day" '+%Y%m%d')
+  YEAR=$(date --date="next day" '+%Y')
+  MONTH=$(date --date="next day" '+%m')
+  DAY=$(date --date="next day" '+%d')
   S3_PREFIX="${YEAR}/${MONTH}/${DAY}/"
 #  x=$captchaNumber;
 #  while [ $x -gt 0 ];
@@ -39,16 +39,18 @@ main() {
 
   #Copy the generated Captcha to S3
   targetS3Path="s3://${s3BucketName}/${S3_PREFIX}"
-  targetS3HttpPath="https://${s3BucketName}.s3.${regionName}.amazonaws.com.cn/${s3PrefixName}"
+  targetS3HttpPath="https://${s3BucketName}.s3.${regionName}.amazonaws.com.cn/${S3_PREFIX}"
   echo "target s3 path is ${targetS3Path}"
   echo "target s3 http path is ${targetS3HttpPath}"
-  aws s3 cp ${captchaImageDirectory} ${targetS3Path} --recursive
+  aws s3 cp ${captchaImageDirectory} ${targetS3Path} --recursive --acl public-read
 
   #Generating DDB from the s3 captcha file
   j=0
   for item in `aws s3 ls ${targetS3Path}|awk '{print $4}'`
   do
-      result=`echo $item|awk -F- '{print $3}'|awk -F. '{print $1}'`
+      encrypted_result=`echo $item|awk -F_ '{print $2}'|awk -F. '{print $1}'`
+
+      result=`python -c "import utils as util ;key = bytes.fromhex(\"f0eeb0d35c0b014bb7141e80b9089e7e\"); text = util.decrypt_fn( key, \"${encrypted_result}\"); print(text)"`
       echo "result of $item is $result"
       #create DDB record for this captcha file
       aws dynamodb put-item \

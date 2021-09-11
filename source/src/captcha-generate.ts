@@ -34,8 +34,8 @@ export class CaptchaGeneratorStack extends NestedStack {
     const failure = new sfn.Fail(this, 'Fail', {
       comment: 'Captcha Producer workflow failed',
     });
-    const vpc = ec2.Vpc.fromLookup(this, 'ExistingVpc', {
-      vpcName: 'IntelligentCaptchaStack/CaptchaLoader/MyVpc'
+    const vpc = new ec2.Vpc(this, "MyVpc", {
+      maxAzs: 3 // Default is all AZs in region
     });
 
     const cluster = new ecs.Cluster(this, 'CaptchaGeneratingCluster', {

@@ -93,7 +93,7 @@ export class CaptchaGeneratorStack extends NestedStack {
 
     const triggerFunction = new NodejsFunction(this, 'captchaGeneratingTrigger', {
       entry: path.join(__dirname, '../lambda.d/captcha-trigger/index.ts'),
-      handler: 'TriggerHandler',
+      handler: 'triggerHandler',
       timeout: Duration.seconds(30),
       memorySize: 128,
       runtime: Runtime.NODEJS_14_X,

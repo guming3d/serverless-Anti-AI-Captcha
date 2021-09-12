@@ -1,6 +1,5 @@
 import * as ecs from '@aws-cdk/aws-ecs';
 import {ContainerImage, FargatePlatformVersion} from '@aws-cdk/aws-ecs';
-import * as ec2 from "@aws-cdk/aws-ec2";
 import * as tasks from '@aws-cdk/aws-stepfunctions-tasks'
 import {EcsFargateLaunchTarget, LambdaInvoke} from '@aws-cdk/aws-stepfunctions-tasks'
 import * as sfn from '@aws-cdk/aws-stepfunctions'
@@ -14,6 +13,7 @@ import {Runtime, Tracing} from "@aws-cdk/aws-lambda";
 import { Rule, Schedule } from '@aws-cdk/aws-events';
 import { SfnStateMachine } from '@aws-cdk/aws-events-targets';
 import * as iam from "@aws-cdk/aws-iam";
+import { GatewayVpcEndpointAwsService, Vpc} from "@aws-cdk/aws-ec2";
 
 export interface CaptchaGeneratorStackProps extends NestedStackProps {
   readonly ddb_name: string,
@@ -34,9 +34,31 @@ export class CaptchaGeneratorStack extends NestedStack {
     const failure = new sfn.Fail(this, 'Fail', {
       comment: 'Captcha Producer workflow failed',
     });
-    const vpc = new ec2.Vpc(this, "MyVpc", {
-      maxAzs: 3 // Default is all AZs in region
-    });
+
+    const vpcId = this.node.tryGetContext('vpcId');
+    const vpc = vpcId ? Vpc.fromLookup(this, 'CaptchaGeneratorVpc', {
+      vpcId: vpcId === 'default' ? undefined : vpcId,
+      isDefault: vpcId === 'default' ? true : undefined,
+    }) : (() => {
+      const newVpc = new Vpc(this, 'CaptchaGeneratorVpc', {
+        maxAzs: 3,
+        gatewayEndpoints: {
+          s3: {
+            service: GatewayVpcEndpointAwsService.S3,
+          },
+          dynamodb: {
+            service: GatewayVpcEndpointAwsService.DYNAMODB,
+          },
+        },
+        enableDnsHostnames: true,
+        enableDnsSupport: true
+      });
+      return newVpc;
+    })();
+
+    if (vpc.privateSubnets.length < 1) {
+      throw new Error('The VPC must have PRIVATE subnet.');
+    }
 
     const cluster = new ecs.Cluster(this, 'CaptchaGeneratingCluster', {
       vpc: vpc

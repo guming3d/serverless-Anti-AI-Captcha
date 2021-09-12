@@ -29,6 +29,8 @@ main() {
 
   #Generating DDB from the s3 captcha file
   j=0
+  fileIndex=0
+  FILENAME="/tmp/captcha_cache"
   for item in `aws s3 ls ${targetS3Path}|awk '{print $4}'`
   do
       encrypted_result=`echo $item|awk -F_ '{print $2}'|awk -F. '{print $1}'`
@@ -36,12 +38,57 @@ main() {
       #decrypt the result using the user key
       result=`python -c "import utils as util ;key = bytes.fromhex(\"f0eeb0d35c0b014bb7141e80b9089e7e\"); text = util.decrypt_fn( key, \"${encrypted_result}\"); print(text)"`
       echo "result of $item is $result"
-      #create DDB record for this captcha file
-      aws dynamodb put-item \
-          --table-name $targetDDBTableName \
-          --item "{  \"captcha_date\": {\"S\": \"${TOMORROW_DATE}\"},  \"captcha_index\": {\"N\": \"${j}\"}, \"captchaUrl\": {\"S\": \"${targetS3HttpPath}${item}\"}, \"result\": {\"S\": \"${result}\"} }" --return-consumed-capacity TOTAL
-      	j=$((j+1));
-      	echo $j
+      tmp=$((j%20))
+      echo "tmp is $tmp"
+      if [[ $tmp -eq 19 ]]; then
+        #use batch write to ddb
+        echo "{ \
+            \"PutRequest\": \
+               { \
+                \"Item\":     \
+                {  \
+                  \"captcha_date\": {\"S\": \"${TOMORROW_DATE}\"},  \
+                  \"captcha_index\": {\"N\": \"${j}\"}, \
+                  \"captchaUrl\": {\"S\": \"${targetS3HttpPath}${item}\"}, \
+                  \"result\": {\"S\": \"${result}\"} \
+                } \
+               } \
+              } \
+              " >>$FILENAME${fileIndex}.json
+
+              echo " ] \
+              }" >>$FILENAME${fileIndex}.json
+
+              #using batch write to dynamodb
+              aws dynamodb batch-write-item \
+                      --request-items file://$FILENAME${fileIndex}.json \
+
+        #  >>$FILENAME${fileIndex}.json
+         fileIndex=$((fileIndex+1))
+        tmp=$((tmp+1))
+
+      else
+        if [[ $tmp -eq 0 ]]; then
+          echo "{ \
+                  \"$targetDDBTableName\": [ ">>$FILENAME${fileIndex}.json
+        fi
+        echo "{ \
+            \"PutRequest\": \
+               { \
+                \"Item\":     \
+                {  \
+                  \"captcha_date\": {\"S\": \"${TOMORROW_DATE}\"},  \
+                  \"captcha_index\": {\"N\": \"${j}\"}, \
+                  \"captchaUrl\": {\"S\": \"${targetS3HttpPath}${item}\"}, \
+                  \"result\": {\"S\": \"${result}\"} \
+                } \
+               } \
+              }, \
+                " >>$FILENAME${fileIndex}.json
+         tmp=$((tmp+1))
+      fi
+      j=$((j+1));
+      echo $j
   done
 
 }

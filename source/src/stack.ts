@@ -110,7 +110,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
     const captcha_index_table = new dynamodb.Table(this, 'Captcha_index', {
       billingMode: dynamodb.BillingMode.PROVISIONED,
       readCapacity: 100,
-      writeCapacity: 2000,
+      writeCapacity: 10,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       partitionKey: {name: 'captcha_date', type: dynamodb.AttributeType.STRING},
       sortKey: {name: 'captcha_index', type: dynamodb.AttributeType.NUMBER},
@@ -120,8 +120,8 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     // configure auto scaling on table
     const writeAutoScaling = captcha_index_table.autoScaleWriteCapacity({
-      minCapacity: 2000,
-      maxCapacity: 3000,
+      minCapacity: 10,
+      maxCapacity: 500,
     });
 
     // scale up when write capacity hits 75%
@@ -129,16 +129,16 @@ export class IntelligentCaptchaStack extends SolutionStack {
       targetUtilizationPercent: 75,
     });
 
-    // scale up at 9 o'clock in the morning
+    // scale up at 15:00 o'clock in the morning
     writeAutoScaling.scaleOnSchedule('scale-up', {
-      schedule: appautoscaling.Schedule.cron({hour: '7', minute: '30'}),
+      schedule: appautoscaling.Schedule.cron({hour: '7', minute: '0'}),
       minCapacity: 2000,
     });
 
-    // scale down in the afternoon
+    // scale down at 20:00 in the evening
     writeAutoScaling.scaleOnSchedule('scale-down', {
-      schedule: appautoscaling.Schedule.cron({hour: '14', minute: '0'}),
-      maxCapacity: 1000,
+      schedule: appautoscaling.Schedule.cron({hour: '12', minute: '0'}),
+      maxCapacity: 10,
     });
 
     const lambdaRole = new iam.Role(this, 'LambdaRole', {
@@ -167,16 +167,6 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     getCaptchaLambda.node.addDependency(captcha_index_table);
 
-    // const captchaLoaderStack = new CaptchaLoaderStack(this, 'CaptchaLoader', {
-    //   ddb_name : captcha_index_table.tableName,
-    //   captcha_number : maxDailyIndex.valueAsString,
-    //   captcha_s3_bucket : captcha_s3_bucket.bucketName
-    //   }
-    // );
-    //
-    // captchaLoaderStack.node.addDependency(captcha_index_table);
-    // captchaLoaderStack.node.addDependency(captcha_s3_bucket);
-
     //Offline Captcha generator stack with ECS schedule tasks
     const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {
       ddb_name : captcha_index_table.tableName,
@@ -187,7 +177,6 @@ export class IntelligentCaptchaStack extends SolutionStack {
     captchaGeneratorStack.node.addDependency(captcha_index_table);
     captchaGeneratorStack.node.addDependency(captcha_s3_bucket);
 
-    // captchaGeneratorStack.node.addDependency(captchaLoaderStack);
 
     const getCaptchaLambdaIntegration = new apiGatewayIntegrations.LambdaProxyIntegration({
       handler: getCaptchaLambda,

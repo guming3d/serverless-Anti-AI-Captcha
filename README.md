@@ -2,13 +2,13 @@
 
 ## How to use?
 
+First use "aws configure" to update the aws credentials then type following commands
 ```shell
 $ cd source
 $ npm i
 $ vim .env  # edit your .env
-$ source .env
-$ cd deployment
-$ ./build-s3-dist.sh $DIST_OUTPUT_BUCKET $SOLUTION_NAME $VERSION
+$ cdk synthesize
+$ cdk deploy --parameters MaxDailyCaptchaNumber=1000
 ```
 
 ## How to cdk synth/diff/deploy?

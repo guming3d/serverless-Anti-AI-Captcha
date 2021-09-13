@@ -10,6 +10,7 @@ import * as apiGatewayIntegrations from '@aws-cdk/aws-apigatewayv2-integrations'
 import * as logs from '@aws-cdk/aws-logs';
 import {BlockPublicAccess, Bucket, BucketEncryption} from "@aws-cdk/aws-s3";
 import {CaptchaGeneratorStack} from "./captcha-generate";
+import * as appautoscaling from '@aws-cdk/aws-applicationautoscaling';
 
 export class SolutionStack extends Stack {
   private _paramGroup: { [grpname: string]: CfnParameter[] } = {}
@@ -108,13 +109,36 @@ export class IntelligentCaptchaStack extends SolutionStack {
     // create Dynamodb table to save the captcha index file
     const captcha_index_table = new dynamodb.Table(this, 'Captcha_index', {
       billingMode: dynamodb.BillingMode.PROVISIONED,
-      readCapacity: 10,
-      writeCapacity: 50,
+      readCapacity: 100,
+      writeCapacity: 2000,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       partitionKey: {name: 'captcha_date', type: dynamodb.AttributeType.STRING},
       sortKey: {name: 'captcha_index', type: dynamodb.AttributeType.NUMBER},
       pointInTimeRecovery: true,
       timeToLiveAttribute: 'ExpirationTime'
+    });
+
+    // configure auto scaling on table
+    const writeAutoScaling = captcha_index_table.autoScaleWriteCapacity({
+      minCapacity: 2000,
+      maxCapacity: 3000,
+    });
+
+    // scale up when write capacity hits 75%
+    writeAutoScaling.scaleOnUtilization({
+      targetUtilizationPercent: 75,
+    });
+
+    // scale up at 9 o'clock in the morning
+    writeAutoScaling.scaleOnSchedule('scale-up', {
+      schedule: appautoscaling.Schedule.cron({hour: '7', minute: '30'}),
+      minCapacity: 2000,
+    });
+
+    // scale down in the afternoon
+    writeAutoScaling.scaleOnSchedule('scale-down', {
+      schedule: appautoscaling.Schedule.cron({hour: '14', minute: '0'}),
+      maxCapacity: 1000,
     });
 
     const lambdaRole = new iam.Role(this, 'LambdaRole', {

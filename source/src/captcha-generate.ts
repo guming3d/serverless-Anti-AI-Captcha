@@ -186,7 +186,7 @@ export class CaptchaGeneratorStack extends NestedStack {
 
     //eventBridge to trigger the lambda daily
     new Rule(this, 'CaptchaSchedulingRule', {
-      schedule: Schedule.cron({ minute: '0', hour: '16' }),
+      schedule: Schedule.cron({ minute: '0', hour: '8' }),
       targets: [new SfnStateMachine(captchaStateMachine)],
     });
 

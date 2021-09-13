@@ -4,16 +4,17 @@ import * as tasks from '@aws-cdk/aws-stepfunctions-tasks'
 import {EcsFargateLaunchTarget, LambdaInvoke} from '@aws-cdk/aws-stepfunctions-tasks'
 import * as sfn from '@aws-cdk/aws-stepfunctions'
 import {Errors, IntegrationPattern, LogLevel, StateMachine} from '@aws-cdk/aws-stepfunctions'
+import * as cdk from "@aws-cdk/core";
 import {Aws, Construct, Duration, IgnoreMode, NestedStack, NestedStackProps} from "@aws-cdk/core";
 import {DockerImageAsset} from "@aws-cdk/aws-ecr-assets";
 import * as path from "path";
 import * as logs from "@aws-cdk/aws-logs";
 import {NodejsFunction} from "@aws-cdk/aws-lambda-nodejs";
 import {Runtime, Tracing} from "@aws-cdk/aws-lambda";
-import { Rule, Schedule } from '@aws-cdk/aws-events';
-import { SfnStateMachine } from '@aws-cdk/aws-events-targets';
+import {Rule, Schedule} from '@aws-cdk/aws-events';
+import {SfnStateMachine} from '@aws-cdk/aws-events-targets';
 import * as iam from "@aws-cdk/aws-iam";
-import { GatewayVpcEndpointAwsService, Vpc} from "@aws-cdk/aws-ec2";
+import {GatewayVpcEndpointAwsService, Vpc} from "@aws-cdk/aws-ec2";
 
 export interface CaptchaGeneratorStackProps extends NestedStackProps {
   readonly ddb_name: string,
@@ -146,20 +147,6 @@ export class CaptchaGeneratorStack extends NestedStack {
       assignPublicIp: false,
       containerOverrides: [{
         containerDefinition: containerDefinition,
-        command: [
-          '--data_prefix',
-          // props.bucket.s3UrlForObject(props.neptune.loadObjectPrefix),
-          'AAAA',
-          '--temp_folder',
-          '--neptune_endpoint',
-          '--neptune_port',
-          // Token.asString(props.neptune.cluster.clusterEndpoint.port),
-          '--region',
-          Aws.REGION,
-          '--neptune_iam_role_arn',
-          // props.neptune.loadRole,
-        ],
-        // environment: [{name: 'SOME_KEY', value: sfn.JsonPath.stringAt('$.SomeKey')}],
       }],
       launchTarget: new EcsFargateLaunchTarget({
         platformVersion: FargatePlatformVersion.VERSION1_4,
@@ -176,19 +163,20 @@ export class CaptchaGeneratorStack extends NestedStack {
       logs: {
         destination: new logs.LogGroup(this, 'FraudDetectionLogGroup', {
           retention: logs.RetentionDays.SIX_MONTHS,
-          logGroupName: `/aws/vendedlogs/states/captcha-generating-pipeline/${this.stackName}`,
+          logGroupName: `/step-function/captcha-generating-pipeline/${this.stackName}`,
         }),
         includeExecutionData: true,
-        level: LogLevel.ALL,
+        level: LogLevel.ERROR,
       },
-      tracingEnabled: true,
+      tracingEnabled: false,
     });
 
-    //eventBridge to trigger the lambda daily
+    //eventBridge to trigger the captcha generating step-function daily at 16:00 China localtime(8:00 UTC time)
     new Rule(this, 'CaptchaSchedulingRule', {
-      schedule: Schedule.cron({ minute: '0', hour: '8' }),
+      schedule: Schedule.cron({minute: '0', hour: '8'}),
       targets: [new SfnStateMachine(captchaStateMachine)],
     });
 
+    new cdk.CfnOutput(this, 'captcha_generating_workflow', {value: captchaStateMachine.stateMachineName});
   }
 }

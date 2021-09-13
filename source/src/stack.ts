@@ -76,7 +76,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
     const captcha_s3_bucket = new Bucket(this, 'CaptchaGenerationBucket', {
       bucketName: "captcha-generator-buckets-"+this.account+'-'+this.region,
       encryption: BucketEncryption.S3_MANAGED,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: RemovalPolicy.DESTROY,
       serverAccessLogsBucket: accessLogBucket,
       serverAccessLogsPrefix: 'dataBucketAccessLog',
       lifecycleRules: [
@@ -100,7 +100,6 @@ export class IntelligentCaptchaStack extends SolutionStack {
         allowMethods: [
           CorsHttpMethod.OPTIONS,
           CorsHttpMethod.GET,
-          CorsHttpMethod.PUT,
         ],
         allowCredentials: true,
       },
@@ -121,7 +120,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
     // configure auto scaling on table
     const writeAutoScaling = captcha_index_table.autoScaleWriteCapacity({
       minCapacity: 10,
-      maxCapacity: 500,
+      maxCapacity: 3000,
     });
 
     // scale up when write capacity hits 75%
@@ -129,15 +128,15 @@ export class IntelligentCaptchaStack extends SolutionStack {
       targetUtilizationPercent: 75,
     });
 
-    // scale up at 15:00 o'clock in the morning
+    // scale up at 15:30(7:30 UTC time) o'clock in the afternoon, the captcha generating will be started 16:00 (8:00 UTC time)
     writeAutoScaling.scaleOnSchedule('scale-up', {
-      schedule: appautoscaling.Schedule.cron({hour: '7', minute: '0'}),
+      schedule: appautoscaling.Schedule.cron({hour: '7', minute: '30'}),
       minCapacity: 2000,
     });
 
-    // scale down at 20:00 in the evening
+    // scale down at 19:00 (11:00 UTC time) in the evening
     writeAutoScaling.scaleOnSchedule('scale-down', {
-      schedule: appautoscaling.Schedule.cron({hour: '12', minute: '0'}),
+      schedule: appautoscaling.Schedule.cron({hour: '11', minute: '0'}),
       maxCapacity: 10,
     });
 
@@ -167,7 +166,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     getCaptchaLambda.node.addDependency(captcha_index_table);
 
-    //Offline Captcha generator stack with ECS schedule tasks
+    //Offline Captcha generator stack which contains step-function workflow
     const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {
       ddb_name : captcha_index_table.tableName,
       captcha_number : maxDailyIndex.valueAsString,
@@ -177,12 +176,11 @@ export class IntelligentCaptchaStack extends SolutionStack {
     captchaGeneratorStack.node.addDependency(captcha_index_table);
     captchaGeneratorStack.node.addDependency(captcha_s3_bucket);
 
-
     const getCaptchaLambdaIntegration = new apiGatewayIntegrations.LambdaProxyIntegration({
       handler: getCaptchaLambda,
     });
 
-    // 👇 add route for GET /captcha
+    // add route for GET /captcha
     httpApi.addRoutes({
       path: '/captcha',
       methods: [HttpMethod.GET],
@@ -190,5 +188,8 @@ export class IntelligentCaptchaStack extends SolutionStack {
     });
 
     new cdk.CfnOutput(this, 'httpUrl', {value: httpApi.apiEndpoint});
+    new cdk.CfnOutput(this,'captcha_s3_bucket', {value: captcha_s3_bucket.bucketName});
+    new cdk.CfnOutput(this,'captcha_dynamodb', {value: captcha_index_table.tableName});
+
   }
 }

@@ -9,6 +9,9 @@ import { ContainerImage } from "@aws-cdk/aws-ecs";
 import { DockerImageAsset } from '@aws-cdk/aws-ecr-assets';
 import { Aws, Construct, IgnoreMode, NestedStack, NestedStackProps } from '@aws-cdk/core';
 
+/*********************************************************************
+ * This file is been deprecated and not used, only kept for reference
+ *********************************************************************/
 export interface CaptchaLoaderStackProps extends NestedStackProps {
   readonly ddb_name: string,
   readonly captcha_number: string,

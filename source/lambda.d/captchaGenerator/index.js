@@ -1,6 +1,5 @@
 /* eslint-disable no-undef */
 
-
 exports.handler =  function(event, context, callback) {
 
   // Load the AWS SDK for Node.js

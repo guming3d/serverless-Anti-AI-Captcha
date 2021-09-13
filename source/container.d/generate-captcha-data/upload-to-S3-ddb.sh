@@ -1,6 +1,9 @@
 #!/bin/bash -x
 set -o errexit
 
+# This script is created to upload generated captcha images to s3 and
+# create corresponding records in dynamoDB
+
 export PATH=/opt/awscli/:$PATH
 
 main() {
@@ -18,6 +21,10 @@ main() {
   DAY=$(date --date="next day" '+%d')
   S3_PREFIX="${YEAR}/${MONTH}/${DAY}/"
 
+  EPOCH_TOMORROW=$(date --date="next day" '+%s')
+  EPOCH_EXPIRE_DATE=$((EPOCH_TOMORROW + 604800))
+
+
   trap cleanup EXIT
 
   #Copy the generated Captcha to S3
@@ -27,16 +34,12 @@ main() {
   echo "target s3 http path is ${targetS3HttpPath}"
   aws s3 cp ${captchaImageDirectory} ${targetS3Path} --recursive --acl public-read --exclude "*" --include "*.png"
 
-  #Generating DDB from the s3 captcha file
+  #Generating DDB from the s3 captcha file, using batch-write to increase the performance
   j=0
   fileIndex=0
   FILENAME="/tmp/captcha_cache"
   for item in `aws s3 ls ${targetS3Path}|awk '{print $4}'`
   do
-#      encrypted_result=`echo $item|awk -F_ '{print $2}'|awk -F. '{print $1}'`
-
-      #decrypt the result using the user key
-#      result=`python -c "import utils as util ;key = bytes.fromhex(\"f0eeb0d35c0b014bb7141e80b9089e7e\"); text = util.decrypt_fn( key, \"${encrypted_result}\"); print(text)"`
       resultFileName=`echo $item|awk -F. '{print $1}'`
       result=`cat ${captchaImageDirectory}${resultFileName}.txt`
       echo "result of $item is $result"
@@ -51,6 +54,7 @@ main() {
                 {  \
                   \"captcha_date\": {\"S\": \"${TOMORROW_DATE}\"},  \
                   \"captcha_index\": {\"N\": \"${j}\"}, \
+                  \"ExpirationTime\": {\"N\": \"${EPOCH_EXPIRE_DATE}\"}, \
                   \"captchaUrl\": {\"S\": \"${targetS3HttpPath}${item}\"}, \
                   \"result\": {\"S\": \"${result}\"} \
                 } \
@@ -71,8 +75,6 @@ main() {
                  sleep 200
               done
 
-
-        #  >>$FILENAME${fileIndex}.json
          fileIndex=$((fileIndex+1))
         tmp=$((tmp+1))
 
@@ -88,6 +90,7 @@ main() {
                 {  \
                   \"captcha_date\": {\"S\": \"${TOMORROW_DATE}\"},  \
                   \"captcha_index\": {\"N\": \"${j}\"}, \
+                  \"ExpirationTime\": {\"N\": \"${EPOCH_EXPIRE_DATE}\"}, \
                   \"captchaUrl\": {\"S\": \"${targetS3HttpPath}${item}\"}, \
                   \"result\": {\"S\": \"${result}\"} \
                 } \

@@ -5,7 +5,12 @@ import datetime
 import os
 from os import environ
 from pathlib import Path
-
+"""
+This script is created to call Machine Learning generated Captcha
+It is only wrapper to call captcha_main.py to generate the captcha png files
+and call upload-to-S3-ddb.sh to upload the generated captcha files to S3 and
+inserted to ddb
+"""
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
@@ -16,17 +21,15 @@ captchaNumber = environ['CAPTCHA_NUMBER']
 region = environ['REGION_NAME']
 s3BucketName = environ['S3_BUCKET_NAME']
 
-logger.info(f'Prepared captcha data for bulk load...')
-logger.info("DDB table name is "+ddbName)
-logger.info("Captcha number is "+captchaNumber)
-logger.info("region name is "+region)
-logger.info("s3 bucket name is "+s3BucketName)
+logger.debug("Prepared captcha data for bulk load...")
+logger.debug("DDB table name is "+ddbName)
+logger.debug("Captcha number is "+captchaNumber)
+logger.debug("region name is "+region)
+logger.debug("s3 bucket name is "+s3BucketName)
 
 currentDate = datetime.date.today().strftime("%Y/%m/%d/")
 logger.info("today is "+currentDate)
 
-# captchaFactory=Path(os.path.abspath(__file__)).parent.joinpath('python /app/captcha_main.py')
-# captcha_main.py --customer_name test_account --encrypted_name b6ec0e74e15bb1f7aabe793a5173fd02 --num_per_char 10 --num_captcha_image 10
 dataArgs = [
             'python',
             '/app/captcha_main.py',
@@ -42,7 +45,6 @@ dataArgs = [
             '1'
             ]
 
-# subprocess.check_call([captchaFactory] + list(dataArgs))
 subprocess.check_call(list(dataArgs))
 
 dynamoDBGenerator=Path(os.path.abspath(__file__)).parent.joinpath('upload-to-S3-ddb.sh')

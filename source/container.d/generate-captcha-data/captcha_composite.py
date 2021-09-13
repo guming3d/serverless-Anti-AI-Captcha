@@ -152,6 +152,13 @@ def save_captcha(captcha_img, formula, answer, save_path, customer_key):
     # save image
     captcha_img.save(file_path, 'PNG')
 
+    # save the result to seperate file
+    result_file_name = str(hashcode) + '_' + encrypted_answer + '.txt'
+    result_file_path = os.path.join(save_path, result_file_name)
+
+    with open(result_file_path, "w") as text_file:
+        text_file.write("%s" % str(answer))
+
 
 # if __name__ == '__main__':
 #     parser = argparse.ArgumentParser("Captch image composition codes.")

@@ -52,7 +52,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
     super(scope, id, props);
 
-    this.setDescription("(SO####) - Intelligent Captcha stack.");
+    this.setDescription("(SO8013) - Intelligent Captcha stack.");
 
     const maxDailyIndex = new CfnParameter(this, 'MaxDailyCaptchaNumber', {
       description: 'Max number of Captcha to be generated each day',

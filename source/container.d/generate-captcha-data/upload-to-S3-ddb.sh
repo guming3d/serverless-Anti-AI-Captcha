@@ -25,7 +25,7 @@ main() {
   targetS3HttpPath="https://${s3BucketName}.s3.${regionName}.amazonaws.com.cn/${S3_PREFIX}"
   echo "target s3 path is ${targetS3Path}"
   echo "target s3 http path is ${targetS3HttpPath}"
-  aws s3 cp ${captchaImageDirectory} ${targetS3Path} --recursive --acl public-read
+  aws s3 cp ${captchaImageDirectory} ${targetS3Path} --recursive --acl public-read --exclude "*" --include "*.png"
 
   #Generating DDB from the s3 captcha file
   j=0
@@ -33,10 +33,12 @@ main() {
   FILENAME="/tmp/captcha_cache"
   for item in `aws s3 ls ${targetS3Path}|awk '{print $4}'`
   do
-      encrypted_result=`echo $item|awk -F_ '{print $2}'|awk -F. '{print $1}'`
+#      encrypted_result=`echo $item|awk -F_ '{print $2}'|awk -F. '{print $1}'`
 
       #decrypt the result using the user key
-      result=`python -c "import utils as util ;key = bytes.fromhex(\"f0eeb0d35c0b014bb7141e80b9089e7e\"); text = util.decrypt_fn( key, \"${encrypted_result}\"); print(text)"`
+#      result=`python -c "import utils as util ;key = bytes.fromhex(\"f0eeb0d35c0b014bb7141e80b9089e7e\"); text = util.decrypt_fn( key, \"${encrypted_result}\"); print(text)"`
+      resultFileName=`echo $item|awk -F. '{print $1}'`
+      result=`cat ${captchaImageDirectory}${resultFileName}.txt`
       echo "result of $item is $result"
       tmp=$((j%20))
       echo "tmp is $tmp"
@@ -60,8 +62,15 @@ main() {
               }" >>$FILENAME${fileIndex}.json
 
               #using batch write to dynamodb
-              aws dynamodb batch-write-item \
-                      --request-items file://$FILENAME${fileIndex}.json \
+              n=0
+              until [ "$n" -ge 3 ]
+              do
+                 aws dynamodb batch-write-item --request-items file://$FILENAME${fileIndex}.json && break  # substitute your command here
+                 n=$((n+1))
+                 echo "dynamodb been throttled and retry $n time"
+                 sleep 200
+              done
+
 
         #  >>$FILENAME${fileIndex}.json
          fileIndex=$((fileIndex+1))

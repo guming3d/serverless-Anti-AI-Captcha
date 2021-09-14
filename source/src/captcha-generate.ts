@@ -132,7 +132,7 @@ export class CaptchaGeneratorStack extends NestedStack {
       integrationPattern: sfn.IntegrationPattern.RUN_JOB,
       cluster: cluster,
       taskDefinition: taskDefinition,
-      assignPublicIp: false,
+      assignPublicIp: true,
       containerOverrides: [{
         containerDefinition: containerDefinition,
       }],

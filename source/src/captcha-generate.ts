@@ -43,7 +43,7 @@ export class CaptchaGeneratorStack extends NestedStack {
       print("public subnet number is %s",vpc.publicSubnets[i].subnetId);
     }
     for ( let i = 0; i < vpc.privateSubnets.length; i++) {
-      print("private subnet number is %s",vpc.privateSubnets);
+      print("private subnet number is %s",vpc.privateSubnets[i].subnetId);
     }
     if (vpc.privateSubnets.length < 1) {
       throw new Error('The VPC must have PRIVATE subnet.');

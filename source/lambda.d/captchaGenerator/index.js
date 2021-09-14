@@ -62,7 +62,27 @@ exports.handler =  function(event, context, callback) {
   ddb.getItem(params, function(err, data) {
     if (err) {
       console.error("Failed to get DDB record with error:", err);
-      callback(Error(err));
+      //will try to get captcha from previous date
+      let prevDate = convertedDate.setDate(convertedDate.getDate() - 1);
+      let prevDateStr = dateFormat(prevDate, "%Y%m%d", false);
+      console.debug("prev date is " + prevDateStr);
+      params.Key.captcha_date = prevDateStr;
+      ddb.getItem(params, function(err, data) {
+        if (err) {
+          console.error("Failed to get DDB record with error:", err);
+          callback(Error(err));
+        } else {
+          console.debug("captchaUrl is ", data.Item.captchaUrl.S);
+          console.debug("result is ", data.Item.result.S);
+          callback(null,
+            {
+              statusCode: 200,
+              headers: { 'Content-Type': 'text/plain' },
+              body: JSON.stringify(data.Item)
+            });
+        }
+      });
+      // callback(Error(err));
     } else {
       console.debug("captchaUrl is ", data.Item.captchaUrl.S);
       console.debug("result is ", data.Item.result.S);

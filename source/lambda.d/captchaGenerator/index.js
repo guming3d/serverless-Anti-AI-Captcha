@@ -30,7 +30,12 @@ exports.handler =  function(event, context, callback) {
   function convertTZ(date, tzString) {
     return new Date((typeof date === "string" ? new Date(date) : date).toLocaleString("en-US", {timeZone: tzString}));
   }
-  const convertedDate = convertTZ(new Date(),"Asia/Shanghai")
+
+  //TODO: replace tomorrowDate to current date in real production
+  let tomorrowDate = new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+
+  const convertedDate = convertTZ(tomorrowDate,"Asia/Shanghai")
 
   let currentDate = dateFormat(convertedDate, "%Y%m%d", false);
   console.debug("current date is " + currentDate);

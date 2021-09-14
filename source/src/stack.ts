@@ -99,6 +99,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
       bucketName: "captcha-generator-buckets-"+this.account+'-'+this.region,
       encryption: BucketEncryption.S3_MANAGED,
       removalPolicy: RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
       serverAccessLogsBucket: accessLogBucket,
       serverAccessLogsPrefix: 'dataBucketAccessLog',
       lifecycleRules: [

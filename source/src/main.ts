@@ -4,7 +4,20 @@ import { IntelligentCaptchaStack } from './stack';
 
 const app = new App();
 
-new IntelligentCaptchaStack(app, 'IntelligentCaptchaStack', { synthesizer: newSynthesizer() });
+const vpcId = app.node.tryGetContext('vpcId');
+const env = vpcId ? {
+  account: process.env.CDK_DEFAULT_ACCOUNT,
+  region: process.env.CDK_DEFAULT_REGION,
+} : undefined;
+
+new IntelligentCaptchaStack(app, 'IntelligentCaptchaStack', {
+  env: env,
+  synthesizer: newSynthesizer(),
+  tags: {
+    app: 'intelligent-captcha',
+  },
+
+});
 
 app.synth();
 

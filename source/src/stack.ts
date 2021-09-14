@@ -11,6 +11,7 @@ import * as logs from '@aws-cdk/aws-logs';
 import {BlockPublicAccess, Bucket, BucketEncryption} from "@aws-cdk/aws-s3";
 import {CaptchaGeneratorStack} from "./captcha-generate";
 import * as appautoscaling from '@aws-cdk/aws-applicationautoscaling';
+import {GatewayVpcEndpointAwsService, Vpc} from "@aws-cdk/aws-ec2";
 
 export class SolutionStack extends Stack {
   private _paramGroup: { [grpname: string]: CfnParameter[] } = {}
@@ -66,6 +67,27 @@ export class IntelligentCaptchaStack extends SolutionStack {
       type: 'Number',
       default: 7,
     })
+
+    const vpcId = this.node.tryGetContext('vpcId');
+    const vpc = vpcId ? Vpc.fromLookup(this, 'CaptchaGeneratorVpc', {
+      vpcId: vpcId === 'default' ? undefined : vpcId,
+      isDefault: vpcId === 'default' ? true : undefined,
+    }) : (() => {
+      const newVpc = new Vpc(this, 'CaptchaGeneratorVpc', {
+        maxAzs: 3,
+        gatewayEndpoints: {
+          s3: {
+            service: GatewayVpcEndpointAwsService.S3,
+          },
+          dynamodb: {
+            service: GatewayVpcEndpointAwsService.DYNAMODB,
+          },
+        },
+        enableDnsHostnames: true,
+        enableDnsSupport: true
+      });
+      return newVpc;
+    })();
 
     const accessLogBucket = new Bucket(this, 'BucketAccessLog', {
       encryption: BucketEncryption.S3_MANAGED,
@@ -168,6 +190,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     //Offline Captcha generator stack which contains step-function workflow
     const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {
+      inputVPC: vpc,
       ddb_name : captcha_index_table.tableName,
       captcha_number : maxDailyIndex.valueAsString,
       captcha_s3_bucket : captcha_s3_bucket.bucketName

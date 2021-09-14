@@ -14,9 +14,11 @@ import {Runtime, Tracing} from "@aws-cdk/aws-lambda";
 import {Rule, Schedule} from '@aws-cdk/aws-events';
 import {SfnStateMachine} from '@aws-cdk/aws-events-targets';
 import * as iam from "@aws-cdk/aws-iam";
-import {GatewayVpcEndpointAwsService, Vpc} from "@aws-cdk/aws-ec2";
+import {IVpc} from "@aws-cdk/aws-ec2";
+import {print} from "aws-cdk/lib/logging";
 
 export interface CaptchaGeneratorStackProps extends NestedStackProps {
+  readonly inputVPC: IVpc
   readonly ddb_name: string,
   readonly captcha_number: string,
   readonly captcha_s3_bucket: string
@@ -30,33 +32,19 @@ export class CaptchaGeneratorStack extends NestedStack {
     const ddbName = props.ddb_name
     const captchaNumber = props.captcha_number
     const s3_bucket_name = props.captcha_s3_bucket
+    const vpc = props.inputVPC
 
     // create states of step functions for pipeline
     const failure = new sfn.Fail(this, 'Fail', {
       comment: 'Captcha Producer workflow failed',
     });
 
-    const vpcId = this.node.tryGetContext('vpcId');
-    const vpc = vpcId ? Vpc.fromLookup(this, 'CaptchaGeneratorVpc', {
-      vpcId: vpcId === 'default' ? undefined : vpcId,
-      isDefault: vpcId === 'default' ? true : undefined,
-    }) : (() => {
-      const newVpc = new Vpc(this, 'CaptchaGeneratorVpc', {
-        maxAzs: 3,
-        gatewayEndpoints: {
-          s3: {
-            service: GatewayVpcEndpointAwsService.S3,
-          },
-          dynamodb: {
-            service: GatewayVpcEndpointAwsService.DYNAMODB,
-          },
-        },
-        enableDnsHostnames: true,
-        enableDnsSupport: true
-      });
-      return newVpc;
-    })();
-
+    for ( let i = 0; i < vpc.publicSubnets.length; i++) {
+      print("public subnet number is %s",vpc.publicSubnets[i].subnetId);
+    }
+    for ( let i = 0; i < vpc.privateSubnets.length; i++) {
+      print("private subnet number is %s",vpc.privateSubnets);
+    }
     if (vpc.privateSubnets.length < 1) {
       throw new Error('The VPC must have PRIVATE subnet.');
     }

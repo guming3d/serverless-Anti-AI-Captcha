@@ -6,8 +6,8 @@ First use "aws configure" to update the aws credentials then type following comm
 ```shell
 $ cd source
 $ npm i
-$ cdk synthesize
-$ cdk deploy --parameters MaxDailyCaptchaNumber=1000 -c vpcId=vpc-9761e3fe
+$ npx cdk synthesize
+$ npx cdk deploy --parameters MaxDailyCaptchaNumber=1000 -c vpcId=vpc-9761e3fe
 
 ```
 

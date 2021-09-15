@@ -6,9 +6,9 @@ First use "aws configure" to update the aws credentials then type following comm
 ```shell
 $ cd source
 $ npm i
-$ vim .env  # edit your .env
 $ cdk synthesize
-$ cdk deploy --parameters MaxDailyCaptchaNumber=1000
+$ cdk deploy --parameters MaxDailyCaptchaNumber=1000 -c vpcId=vpc-9761e3fe
+
 ```
 
 ## How to cdk synth/diff/deploy?

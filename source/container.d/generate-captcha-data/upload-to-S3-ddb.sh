@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 set -o errexit
 
 # This script is created to upload generated captcha images to s3 and
@@ -32,6 +32,10 @@ main() {
   targetS3HttpPath="https://${s3BucketName}.s3.${regionName}.amazonaws.com.cn/${S3_PREFIX}"
   echo "target s3 path is ${targetS3Path}"
   echo "target s3 http path is ${targetS3HttpPath}"
+  #first delete all the existing files
+  aws s3 rm --recursive ${targetS3Path}
+
+  #upload the captcha png files
   aws s3 cp ${captchaImageDirectory} ${targetS3Path} --recursive --acl public-read --exclude "*" --include "*.png"
 
   #Generating DDB from the s3 captcha file, using batch-write to increase the performance

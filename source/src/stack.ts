@@ -1,17 +1,16 @@
 import * as path from 'path';
 import * as lambda from '@aws-cdk/aws-lambda';
-import {Construct, Stack, StackProps, CfnParameter, CfnParameterProps, RemovalPolicy, Duration} from '@aws-cdk/core';
+import * as cdk from '@aws-cdk/core';
+import {CfnParameter, CfnParameterProps, Construct, Duration, RemovalPolicy, Stack, StackProps} from '@aws-cdk/core';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as iam from '@aws-cdk/aws-iam';
-import {ManagedPolicy} from "@aws-cdk/aws-iam";
-import * as cdk from '@aws-cdk/core';
-import {CorsHttpMethod, HttpApi, HttpMethod} from "@aws-cdk/aws-apigatewayv2";
-import * as apiGatewayIntegrations from '@aws-cdk/aws-apigatewayv2-integrations';
+import {ManagedPolicy} from '@aws-cdk/aws-iam';
 import * as logs from '@aws-cdk/aws-logs';
 import {BlockPublicAccess, Bucket, BucketEncryption} from "@aws-cdk/aws-s3";
 import {CaptchaGeneratorStack} from "./captcha-generate";
 import * as appautoscaling from '@aws-cdk/aws-applicationautoscaling';
 import {GatewayVpcEndpointAwsService, Vpc} from "@aws-cdk/aws-ec2";
+import {AuthorizationType, EndpointType, LambdaRestApi} from "@aws-cdk/aws-apigateway";
 
 export class SolutionStack extends Stack {
   private _paramGroup: { [grpname: string]: CfnParameter[] } = {}
@@ -111,23 +110,6 @@ export class IntelligentCaptchaStack extends SolutionStack {
       blockPublicAccess: new BlockPublicAccess({ blockPublicPolicy: false })
     });
 
-    const httpApi = new HttpApi(this, 'http-api-captcha', {
-      description: 'HTTP API for getting captcha',
-      corsPreflight: {
-        allowHeaders: [
-          'Content-Type',
-          'X-Amz-Date',
-          'Authorization',
-          'X-Api-Key',
-        ],
-        allowMethods: [
-          CorsHttpMethod.OPTIONS,
-          CorsHttpMethod.GET,
-        ],
-        allowCredentials: true,
-      },
-    });
-
     // create Dynamodb table to save the captcha index file
     const captcha_index_table = new dynamodb.Table(this, 'Captcha_index', {
       billingMode: dynamodb.BillingMode.PROVISIONED,
@@ -150,6 +132,15 @@ export class IntelligentCaptchaStack extends SolutionStack {
     writeAutoScaling.scaleOnUtilization({
       targetUtilizationPercent: 75,
     });
+
+    const readAutoScaling = captcha_index_table.autoScaleReadCapacity({
+      minCapacity: 100,
+      maxCapacity: 3000
+    });
+
+    readAutoScaling.scaleOnUtilization({
+      targetUtilizationPercent: 75
+    })
 
     // scale up at 15:30(7:30 UTC time) o'clock in the afternoon, the captcha generating will be started 16:00 (8:00 UTC time)
     writeAutoScaling.scaleOnSchedule('scale-up', {
@@ -200,20 +191,22 @@ export class IntelligentCaptchaStack extends SolutionStack {
     captchaGeneratorStack.node.addDependency(captcha_index_table);
     captchaGeneratorStack.node.addDependency(captcha_s3_bucket);
 
-    const getCaptchaLambdaIntegration = new apiGatewayIntegrations.LambdaProxyIntegration({
+    const rest_api = new LambdaRestApi(this, 'restfulApi', {
       handler: getCaptchaLambda,
-    });
+      description: "restful api to get the captcha",
+      proxy: false,
+      restApiName:'restfulGetCaptcha',
+      endpointConfiguration: {
+        types: [ EndpointType.REGIONAL]
+      }
+    })
 
-    // add route for GET /captcha
-    httpApi.addRoutes({
-      path: '/captcha',
-      methods: [HttpMethod.GET],
-      integration: getCaptchaLambdaIntegration
-    });
+    const captcha_proxy = rest_api.root.addResource('captcha');
+    captcha_proxy.addMethod('GET', undefined, {
+      authorizationType: AuthorizationType.IAM
+    })
 
-    new cdk.CfnOutput(this, 'httpUrl', {value: httpApi.apiEndpoint});
     new cdk.CfnOutput(this,'captcha_s3_bucket', {value: captcha_s3_bucket.bucketName});
     new cdk.CfnOutput(this,'captcha_dynamodb', {value: captcha_index_table.tableName});
-
   }
 }

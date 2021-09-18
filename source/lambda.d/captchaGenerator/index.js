@@ -63,7 +63,7 @@ exports.handler = function (event, context, callback) {
       callback(Error(err));
     } else {
       if (data.Item == null) {
-        console.debug("failed to get the record fron dynamod db will try to get the record from previous day");
+        console.debug("failed to get the record from dynamodb will try to get the record from previous day");
 
         let previousDate = curDate;
         previousDate.setDate(previousDate.getDate() - 1);

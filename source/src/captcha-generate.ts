@@ -16,6 +16,7 @@ import {SfnStateMachine} from '@aws-cdk/aws-events-targets';
 import * as iam from "@aws-cdk/aws-iam";
 import {IVpc} from "@aws-cdk/aws-ec2";
 import {print} from "aws-cdk/lib/logging";
+import {ManagedPolicy} from "@aws-cdk/aws-iam";
 
 export interface CaptchaGeneratorStackProps extends NestedStackProps {
   readonly inputVPC: IVpc
@@ -102,13 +103,26 @@ export class CaptchaGeneratorStack extends NestedStack {
         },
     });
 
+    const lambdaRole = new iam.Role(this, 'TriggerCaptchaLambdaRole', {
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+    });
+
+    // front end lambda only need to access DynamoDB
+    lambdaRole.addManagedPolicy(
+      ManagedPolicy.fromAwsManagedPolicyName('AmazonDynamoDBFullAccess')
+    );
+
     const triggerFunction = new NodejsFunction(this, 'captchaGeneratingTrigger', {
-      entry: path.join(__dirname, '../lambda.d/captcha-trigger/index.ts'),
+      entry: path.join(__dirname, '../lambda.d/captcha-trigger/index.js'),
       handler: 'triggerHandler',
       timeout: Duration.seconds(30),
       memorySize: 128,
       runtime: Runtime.NODEJS_14_X,
       tracing: Tracing.ACTIVE,
+      role: lambdaRole,
+      environment: {
+        DDB_TABLE_NAME: ddbName
+      }
     });
 
     const captchaProducerTriggerTask = new class extends LambdaInvoke {
@@ -128,6 +142,38 @@ export class CaptchaGeneratorStack extends NestedStack {
       resultPath: '$.error',
     });
 
+    const completeFunction = new NodejsFunction(this, 'captchaGeneratingComplete', {
+      entry: path.join(__dirname, '../lambda.d/captcha-complete/index.js'),
+      handler: 'completeHandler',
+      timeout: Duration.seconds(30),
+      memorySize: 128,
+      runtime: Runtime.NODEJS_14_X,
+      tracing: Tracing.ACTIVE,
+      role: lambdaRole,
+      environment: {
+        DDB_TABLE_NAME: ddbName
+      }
+    });
+
+    const captchaProducerCompleteTask = new class extends LambdaInvoke {
+      public toStateJson(): object {
+        return {
+          ...super.toStateJson(),
+          ResultSelector: {
+            'parameters.$': '$.Payload.parameters',
+          },
+        };
+      }
+    }(this, 'captcha generating complete', {
+      lambdaFunction: completeFunction,
+      integrationPattern: IntegrationPattern.REQUEST_RESPONSE,
+    }).addCatch(failure, {
+      errors: [Errors.ALL],
+      resultPath: '$.error',
+    });
+
+
+
     const runTask = new tasks.EcsRunTask(this, 'CaptchaGenerating', {
       integrationPattern: sfn.IntegrationPattern.RUN_JOB,
       cluster: cluster,
@@ -144,7 +190,7 @@ export class CaptchaGeneratorStack extends NestedStack {
       resultPath: '$.error',
     });
 
-    const definition = captchaProducerTriggerTask.next(runTask)
+    const definition = captchaProducerTriggerTask.next(runTask).next(captchaProducerCompleteTask);
 
     const captchaStateMachine = new StateMachine(this, 'CaptchaProducingPipeline', {
       definition,

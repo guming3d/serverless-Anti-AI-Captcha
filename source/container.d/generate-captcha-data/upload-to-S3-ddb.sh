@@ -29,7 +29,12 @@ main() {
 
   #Copy the generated Captcha to S3
   targetS3Path="s3://${s3BucketName}/${S3_PREFIX}"
-  targetS3HttpPath="https://${s3BucketName}.s3.${regionName}.amazonaws.com.cn/${S3_PREFIX}"
+  if [ "$regionName" = "cn-north-1" ] || [ "$regionName" = "cn-northwest-1"]; then
+    targetS3HttpPath="https://${s3BucketName}.s3.${regionName}.amazonaws.com.cn/${S3_PREFIX}"
+  else
+    targetS3HttpPath="https://${s3BucketName}.s3.${regionName}.amazonaws.com/${S3_PREFIX}"
+  fi
+
   echo "target s3 path is ${targetS3Path}"
   echo "target s3 http path is ${targetS3HttpPath}"
   #first delete all the existing files

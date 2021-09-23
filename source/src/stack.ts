@@ -67,6 +67,29 @@ export class IntelligentCaptchaStack extends SolutionStack {
       default: 7,
     })
 
+    const deployStage = new CfnParameter(this, 'deployStage', {
+      description: 'stageName of the deployment, this allow multiple deployment into one account',
+      type: 'String',
+      default: 'prod',
+      allowedValues: ['dev','beta','gamma','preprod','prod']
+    })
+
+    cdk.Tags.of(this).add('stage', deployStage.valueAsString,{
+      includeResourceTypes: [
+        'AWS::Lambda::Function',
+        'AWS::S3::Bucket',
+        'AWS::DynamoDB::Table',
+        'AWS::ECS::Cluster',
+        'AWS::ECS::TaskDefinition',
+        'AWS::ECS::TaskSet',
+        'AWS::ApiGatewayV2::Api',
+        'AWS::ApiGatewayV2::Integration',
+        'AWS::ApiGatewayV2::Stage',
+        'AWS::ApiGateway::RestApi',
+        'AWS::ApiGateway::Method'
+      ],
+    });
+
     const vpcId = this.node.tryGetContext('vpcId');
     const vpc = vpcId ? Vpc.fromLookup(this, 'CaptchaGeneratorVpc', {
       vpcId: vpcId === 'default' ? undefined : vpcId,
@@ -91,16 +114,16 @@ export class IntelligentCaptchaStack extends SolutionStack {
     const accessLogBucket = new Bucket(this, 'BucketAccessLog', {
       encryption: BucketEncryption.S3_MANAGED,
       removalPolicy: RemovalPolicy.RETAIN,
-      serverAccessLogsPrefix: 'accessLogBucketAccessLog',
+      serverAccessLogsPrefix: 'accessLogBucketAccessLog' + '-' + deployStage.valueAsString,
     });
 
     const captcha_s3_bucket = new Bucket(this, 'CaptchaGenerationBucket', {
-      bucketName: "captcha-generator-buckets-"+this.account+'-'+this.region,
+      bucketName: "captcha-generator-buckets-" + this.account + '-' + this.region + '-' + deployStage.valueAsString,
       encryption: BucketEncryption.S3_MANAGED,
       removalPolicy: RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
       serverAccessLogsBucket: accessLogBucket,
-      serverAccessLogsPrefix: 'dataBucketAccessLog',
+      serverAccessLogsPrefix: 'dataBucketAccessLog' + '-' + deployStage.valueAsString,
       lifecycleRules: [
         {
           enabled: true,
@@ -205,6 +228,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
     captcha_proxy.addMethod('GET', undefined, {
       authorizationType: AuthorizationType.IAM
     })
+
 
     new cdk.CfnOutput(this,'captcha_s3_bucket', {value: captcha_s3_bucket.bucketName});
     new cdk.CfnOutput(this,'captcha_dynamodb', {value: captcha_index_table.tableName});

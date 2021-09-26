@@ -10,6 +10,7 @@ RUN apt-get install -y --no-install-recommends gzip
 RUN apt-get install -y --no-install-recommends unzip
 RUN apt-get install -y --no-install-recommends openssl
 RUN apt-get install -y --no-install-recommends gawk
+RUN apt-get install -y --no-install-recommends parallel
 
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
     && unzip awscliv2.zip \

@@ -1,9 +1,8 @@
 ***How to use***
 1. install aws_requests_auth python lib
-2. Update the config section in Client.java 
+2. Update the config section in Client.java
 ```python2html
-  auth = AWSRequestsAuth(aws_access_key='{YOUR_ACCESS_KEY}',
-                       aws_secret_access_key='{YOUR_SECRET_ACCESS_KEY}',
+  auth = BotoAWSRequestsAuth(
                        aws_host='{API_GATEWAY_ENDPOINT_WITHOUT_HTTPS}', #example: so0ub2tsdf.execute-api.cn-northwest-1.amazonaws.com.cn
                        aws_region='{AWS_REGION}', #example: cn-northwest-1
                        aws_service='execute-api')//for example https://234n34k5678k.execute-api.eu-west-1.amazonaws.com

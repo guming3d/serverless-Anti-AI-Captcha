@@ -18,7 +18,7 @@ exports.triggerHandler = function (event, context, callback) {
   let params = {
     TableName: ddbtablename,
     ProvisionedThroughput: {
-      WriteCapacityUnits: 2000,
+      WriteCapacityUnits: 5000,
       ReadCapacityUnits: 200
     },
   };

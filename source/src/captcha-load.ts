@@ -38,7 +38,7 @@ export class CaptchaLoaderStack extends NestedStack {
 
     const taskDefinitionDailyGenerateCaptcha= new ecs.FargateTaskDefinition(this, "DailyGenerateCaptchaFargateTask", {
       memoryLimitMiB: 8192,
-      cpu: 2048
+      cpu: 4096
     })
 
     const dailyCaptchaGeneratorImage = new DockerImageAsset(this, 'BulkLoadCaptchaDataImage', {
@@ -55,7 +55,7 @@ export class CaptchaLoaderStack extends NestedStack {
 
     taskDefinitionDailyGenerateCaptcha.addContainer("DailyCaptchaLoadContainer", {
       image: ContainerImage.fromDockerImageAsset(dailyCaptchaGeneratorImage),
-      cpu: 2048,
+      cpu: 4096,
       memoryLimitMiB: 8192,
       memoryReservationMiB: 8192,
       logging: ecs.LogDriver.awsLogs({

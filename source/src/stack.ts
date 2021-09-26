@@ -8,7 +8,6 @@ import {ManagedPolicy} from '@aws-cdk/aws-iam';
 import * as logs from '@aws-cdk/aws-logs';
 import {BlockPublicAccess, Bucket, BucketEncryption} from "@aws-cdk/aws-s3";
 import {CaptchaGeneratorStack} from "./captcha-generate";
-import * as appautoscaling from '@aws-cdk/aws-applicationautoscaling';
 import {GatewayVpcEndpointAwsService, Vpc} from "@aws-cdk/aws-ec2";
 import {AuthorizationType, EndpointType, LambdaRestApi} from "@aws-cdk/aws-apigateway";
 
@@ -165,18 +164,6 @@ export class IntelligentCaptchaStack extends SolutionStack {
       targetUtilizationPercent: 75
     })
 
-    // scale up at 15:30(7:30 UTC time) o'clock in the afternoon, the captcha generating will be started 16:00 (8:00 UTC time)
-    writeAutoScaling.scaleOnSchedule('scale-up', {
-      schedule: appautoscaling.Schedule.cron({hour: '7', minute: '30'}),
-      minCapacity: 2000,
-    });
-
-    // scale down at 19:00 (11:00 UTC time) in the evening
-    writeAutoScaling.scaleOnSchedule('scale-down', {
-      schedule: appautoscaling.Schedule.cron({hour: '11', minute: '0'}),
-      maxCapacity: 10,
-    });
-
     const lambdaRole = new iam.Role(this, 'LambdaRole', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
     });
@@ -229,8 +216,21 @@ export class IntelligentCaptchaStack extends SolutionStack {
       authorizationType: AuthorizationType.IAM
     })
 
+    //Policy to allow client to call this restful api
+    const api_client_policy = new ManagedPolicy(this, "captcha_client_policy", {
+      managedPolicyName: "captcha_client_policy_"+deployStage.valueAsString,
+      description: "policy for client to call stage:"+deployStage.valueAsString,
+      statements: [
+        new iam.PolicyStatement({
+          resources: [rest_api.arnForExecuteApi()],
+          actions: ['execute-api:Invoke'],
+          effect: iam.Effect.ALLOW,
+        }),
+      ],
+    });
 
     new cdk.CfnOutput(this,'captcha_s3_bucket', {value: captcha_s3_bucket.bucketName});
     new cdk.CfnOutput(this,'captcha_dynamodb', {value: captcha_index_table.tableName});
+    new cdk.CfnOutput(this,'api-gateway_policy', {value: api_client_policy.managedPolicyName});
   }
 }

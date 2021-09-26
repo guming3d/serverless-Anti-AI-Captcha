@@ -29,7 +29,7 @@ main() {
 
   #Copy the generated Captcha to S3
   targetS3Path="s3://${s3BucketName}/${S3_PREFIX}"
-  if [ "$regionName" = "cn-north-1" ] || [ "$regionName" = "cn-northwest-1"]; then
+  if [ "$regionName" = "cn-north-1" ] || [ "$regionName" = "cn-northwest-1" ]; then
     targetS3HttpPath="https://${s3BucketName}.s3.${regionName}.amazonaws.com.cn/${S3_PREFIX}"
   else
     targetS3HttpPath="https://${s3BucketName}.s3.${regionName}.amazonaws.com/${S3_PREFIX}"
@@ -46,7 +46,9 @@ main() {
   #Generating DDB from the s3 captcha file, using batch-write to increase the performance
   j=0
   fileIndex=0
-  FILENAME="/tmp/captcha_cache"
+  TMPPATH="/tmp/captcha_cache"
+  FILENAME="${TMPPATH}/captcha_cache_"
+  mkdir -p /tmp/captcha_cache
   for item in `aws s3 ls ${targetS3Path}|awk '{print $4}'`
   do
       resultFileName=`echo $item|awk -F. '{print $1}'`
@@ -73,16 +75,6 @@ main() {
 
               echo " ] \
               }" >>$FILENAME${fileIndex}.json
-
-              #using batch write to dynamodb
-              n=0
-              until [ "$n" -ge 3 ]
-              do
-                 aws dynamodb batch-write-item --request-items file://$FILENAME${fileIndex}.json && break  # substitute your command here
-                 n=$((n+1))
-                 echo "dynamodb been throttled and retry $n time"
-                 sleep 200
-              done
 
          fileIndex=$((fileIndex+1))
         tmp=$((tmp+1))
@@ -112,6 +104,22 @@ main() {
       echo $j
   done
 
+  # send the record to dynamodb
+#    for file in `ls ${TMPPATH}`
+#    do
+#        #using batch write to dynamodb
+#        n=0
+#        sleepTime=50
+#        until [ "$n" -ge 5 ]
+#            do
+#                aws dynamodb batch-write-item --request-items file://${TMPPATH}/${file} && break  # substitute your command here
+#                n=$((n+1))
+#                sleep "${sleepTime}"
+#                echo "dynamodb been throttled and retry $n time, sleep ${sleepTime}"
+#                sleepTime=$((sleepTime * 2)) #increase the sleep time for exponential backoff
+#            done
+#    done
+   ls -1 ${TMPPATH}|parallel --ungroup --jobs 40 -I% --max-args 1 aws dynamodb batch-write-item --request-items file://${TMPPATH}/%
 }
 
 # deletes the temp directory

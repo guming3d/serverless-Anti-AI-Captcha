@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as lambda from '@aws-cdk/aws-lambda';
+import * as sns from '@aws-cdk/aws-sns';
 import * as cdk from '@aws-cdk/core';
 import {CfnParameter, CfnParameterProps, Construct, Duration, RemovalPolicy, Stack, StackProps} from '@aws-cdk/core';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
@@ -190,16 +191,25 @@ export class IntelligentCaptchaStack extends SolutionStack {
 
     getCaptchaLambda.node.addDependency(captcha_index_table);
 
+    const captcha_generating_result_topic = new sns.Topic(this, 'CaptchaGenerateResultTopic', {
+      displayName: 'Captcha Generating result',
+      fifo: false,
+      topicName: 'captchaGeneratingResultTopic',
+    });
+
     //Offline Captcha generator stack which contains step-function workflow
     const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {
       inputVPC: vpc,
       ddb_name : captcha_index_table.tableName,
       captcha_number : maxDailyIndex.valueAsString,
-      captcha_s3_bucket : captcha_s3_bucket.bucketName
+      captcha_s3_bucket : captcha_s3_bucket.bucketName,
+      captcha_generate_result_sns_arn : captcha_generating_result_topic.topicArn
       }
     );
+
     captchaGeneratorStack.node.addDependency(captcha_index_table);
     captchaGeneratorStack.node.addDependency(captcha_s3_bucket);
+    captchaGeneratorStack.node.addDependency(captcha_generating_result_topic);
 
     const rest_api = new LambdaRestApi(this, 'restfulApi', {
       handler: getCaptchaLambda,

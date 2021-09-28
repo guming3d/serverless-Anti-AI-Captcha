@@ -12,6 +12,9 @@ exports.triggerHandler = function (event, context, callback) {
   // Set the region
   AWS.config.update({region: process.env.AWS_REGION});
 
+  //TODO: need to remove, only for testing
+  // callback(Error("failed to update the write capacity unit of dynamodb to 2000"));
+
   // Create the DynamoDB service object
   let ddb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
   let ddbtablename = process.env.DDB_TABLE_NAME

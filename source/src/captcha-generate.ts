@@ -22,7 +22,8 @@ export interface CaptchaGeneratorStackProps extends NestedStackProps {
   readonly inputVPC: IVpc
   readonly ddb_name: string,
   readonly captcha_number: string,
-  readonly captcha_s3_bucket: string
+  readonly captcha_s3_bucket: string,
+  readonly captcha_generate_result_sns_arn: string
 }
 
 export class CaptchaGeneratorStack extends NestedStack {
@@ -34,11 +35,13 @@ export class CaptchaGeneratorStack extends NestedStack {
     const captchaNumber = props.captcha_number
     const s3_bucket_name = props.captcha_s3_bucket
     const vpc = props.inputVPC
+    const sns_topic_arn = props.captcha_generate_result_sns_arn
 
     // create states of step functions for pipeline
     const failure = new sfn.Fail(this, 'Fail', {
       comment: 'Captcha Producer workflow failed',
     });
+
 
     for ( let i = 0; i < vpc.publicSubnets.length; i++) {
       print("public subnet number is %s",vpc.publicSubnets[i].subnetId);
@@ -111,6 +114,44 @@ export class CaptchaGeneratorStack extends NestedStack {
     lambdaRole.addManagedPolicy(
       ManagedPolicy.fromAwsManagedPolicyName('AmazonDynamoDBFullAccess')
     );
+    lambdaRole.addManagedPolicy(
+      ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
+    );
+
+    lambdaRole.addManagedPolicy(
+      ManagedPolicy.fromAwsManagedPolicyName('AmazonSNSFullAccess')
+    );
+
+    const failureFunction = new NodejsFunction(this, 'captchaGeneratingFailure', {
+      entry: path.join(__dirname, '../lambda.d/captcha-failure/index.js'),
+      handler: 'failureHandler',
+      timeout: Duration.seconds(30),
+      memorySize: 128,
+      runtime: Runtime.NODEJS_14_X,
+      tracing: Tracing.ACTIVE,
+      role: lambdaRole,
+      environment: {
+        SNS_TOPIC_ARN: sns_topic_arn
+      }
+    });
+
+    const captchaProducerFailTask = new class extends LambdaInvoke {
+      public toStateJson(): object {
+        return {
+          ...super.toStateJson(),
+          ResultSelector: {
+            'parameters.$': '$.Payload.parameters',
+          },
+        };
+      }
+    }(this, 'captcha generating failed', {
+      lambdaFunction: failureFunction,
+      integrationPattern: IntegrationPattern.REQUEST_RESPONSE,
+    }).addCatch(failure, {
+      errors: [Errors.ALL],
+      resultPath: '$.error',
+    });
+
 
     const triggerFunction = new NodejsFunction(this, 'captchaGeneratingTrigger', {
       entry: path.join(__dirname, '../lambda.d/captcha-trigger/index.js'),
@@ -137,7 +178,7 @@ export class CaptchaGeneratorStack extends NestedStack {
     }(this, 'trigger captcha generating', {
       lambdaFunction: triggerFunction,
       integrationPattern: IntegrationPattern.REQUEST_RESPONSE,
-    }).addCatch(failure, {
+    }).addCatch(captchaProducerFailTask, {
       errors: [Errors.ALL],
       resultPath: '$.error',
     });
@@ -151,7 +192,8 @@ export class CaptchaGeneratorStack extends NestedStack {
       tracing: Tracing.ACTIVE,
       role: lambdaRole,
       environment: {
-        DDB_TABLE_NAME: ddbName
+        DDB_TABLE_NAME: ddbName,
+        SNS_TOPIC_ARN: sns_topic_arn
       }
     });
 
@@ -167,12 +209,10 @@ export class CaptchaGeneratorStack extends NestedStack {
     }(this, 'captcha generating complete', {
       lambdaFunction: completeFunction,
       integrationPattern: IntegrationPattern.REQUEST_RESPONSE,
-    }).addCatch(failure, {
+    }).addCatch(captchaProducerFailTask, {
       errors: [Errors.ALL],
       resultPath: '$.error',
     });
-
-
 
     const runTask = new tasks.EcsRunTask(this, 'CaptchaGenerating', {
       integrationPattern: sfn.IntegrationPattern.RUN_JOB,
@@ -185,7 +225,7 @@ export class CaptchaGeneratorStack extends NestedStack {
       launchTarget: new EcsFargateLaunchTarget({
         platformVersion: FargatePlatformVersion.VERSION1_4,
       }),
-    }).addCatch(failure, {
+    }).addCatch(captchaProducerFailTask, {
       errors: [Errors.ALL],
       resultPath: '$.error',
     });

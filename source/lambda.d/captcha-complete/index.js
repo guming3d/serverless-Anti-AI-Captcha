@@ -11,6 +11,8 @@ exports.completeHandler = function (event, context, callback) {
   // Set the region
   AWS.config.update({region: process.env.AWS_REGION});
 
+  const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
+
   // Create the DynamoDB service object
   let ddb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
   let ddbtablename = process.env.DDB_TABLE_NAME
@@ -30,10 +32,31 @@ exports.completeHandler = function (event, context, callback) {
     else console.debug("Succeed update the write capacity unit to 5");           // successful response
   });
 
-  const parameters = {
-    parameters: {
-      captchaGeneratingJob: {},
-    },
+  const snsSubject = 'Captcha generating SUCCEED';
+
+  // Create publish parameters for sns
+  var sns_params = {
+    Message: 'Success generating the captcha images',
+    Subject: snsSubject,
+    TopicArn: SNS_TOPIC_ARN
   };
-  callback(null,parameters);
+  let sns = new AWS.SNS()
+
+  //send failure message to sns
+  sns.publish(sns_params, function (err, data) {
+    if (err) {
+      console.error(err, err.stack);
+      callback(Error("failed to send sns message for success "));
+    }
+    else {
+      const parameters = {
+        parameters: {
+          captchaGeneratingJob: {},
+        },
+      };
+      callback(null,parameters);
+    }
+  });
+
+
 }

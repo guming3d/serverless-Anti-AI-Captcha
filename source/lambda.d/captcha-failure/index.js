@@ -12,6 +12,24 @@ exports.failureHandler = function (event, context, callback) {
   // Set the region
   AWS.config.update({region: process.env.AWS_REGION});
 
+  // Create the DynamoDB service object
+  let ddb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
+  const DDB_TABLE_NAME = process.env.DDB_TABLE_NAME
+  let ddb_params = {
+    TableName: DDB_TABLE_NAME,
+    ProvisionedThroughput: {
+      WriteCapacityUnits: 5,
+      ReadCapacityUnits: 200
+    },
+  };
+
+  ddb.updateTable(ddb_params, function (err, data) {
+    if (err) {
+      console.error(err, err.stack);
+    } // an error occurred
+    else console.debug("Succeed update the write capacity unit to 5");           // successful response
+  });
+
   const snsSubject = 'Captcha generating FAILED';
 
   // Create publish parameters for sns
@@ -26,7 +44,7 @@ exports.failureHandler = function (event, context, callback) {
   sns.publish(params, function (err, data) {
     if (err) {
       console.error(err, err.stack);
-      callback(Error("failed to send sns message"));
+      callback(Error("failed to generate the captcha and failed to send sns message"));
     } // an error occurred when sending sns message
     else {
       callback(Error("failed to generate the captcha"));

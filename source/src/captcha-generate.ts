@@ -31,6 +31,8 @@ export class CaptchaGeneratorStack extends NestedStack {
   constructor(scope: Construct, id: string, props: CaptchaGeneratorStackProps) {
     super(scope, id, props);
 
+    this.templateOptions.description = "(SO8013) - Intelligent Captcha nested stack to generate the captcha images in daily.";
+
     const ddbName = props.ddb_name
     const captchaNumber = props.captcha_number
     const s3_bucket_name = props.captcha_s3_bucket
@@ -59,7 +61,7 @@ export class CaptchaGeneratorStack extends NestedStack {
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'CaptchaGeneratingTask', {
       memoryLimitMiB: 8192,
-      cpu: 4096,
+      cpu: 2048,
     });
 
     const dailyCaptchaGeneratorImage = new DockerImageAsset(this, 'DailyCaptchaGeneratingImage', {
@@ -87,7 +89,7 @@ export class CaptchaGeneratorStack extends NestedStack {
 
     const containerDefinition = taskDefinition.addContainer('TheCaptchaGeneratingContainer', {
       image: ContainerImage.fromDockerImageAsset(dailyCaptchaGeneratorImage),
-      cpu: 4096,
+      cpu: 2048,
       memoryLimitMiB: 8192,
       memoryReservationMiB: 8192,
       logging: ecs.LogDriver.awsLogs({
@@ -131,7 +133,8 @@ export class CaptchaGeneratorStack extends NestedStack {
       tracing: Tracing.ACTIVE,
       role: lambdaRole,
       environment: {
-        SNS_TOPIC_ARN: sns_topic_arn
+        SNS_TOPIC_ARN: sns_topic_arn,
+        DDB_TABLE_NAME: ddbName,
       }
     });
 

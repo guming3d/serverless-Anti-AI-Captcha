@@ -11,6 +11,7 @@ import {BlockPublicAccess, Bucket, BucketEncryption} from "@aws-cdk/aws-s3";
 import {CaptchaGeneratorStack} from "./captcha-generate";
 import {GatewayVpcEndpointAwsService, Vpc} from "@aws-cdk/aws-ec2";
 import {AuthorizationType, EndpointType, LambdaRestApi} from "@aws-cdk/aws-apigateway";
+import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
 
 export class SolutionStack extends Stack {
   private _paramGroup: { [grpname: string]: CfnParameter[] } = {}
@@ -74,6 +75,12 @@ export class IntelligentCaptchaStack extends SolutionStack {
       allowedValues: ['dev','beta','gamma','preprod','prod']
     })
 
+    const notifyEmail = new CfnParameter(this, 'notifyEmail', {
+      description: 'enter the email address to be notified about captcha generating status',
+      type: 'String',
+      default: '',
+    })
+
     cdk.Tags.of(this).add('stage', deployStage.valueAsString,{
       includeResourceTypes: [
         'AWS::Lambda::Function',
@@ -86,7 +93,10 @@ export class IntelligentCaptchaStack extends SolutionStack {
         'AWS::ApiGatewayV2::Integration',
         'AWS::ApiGatewayV2::Stage',
         'AWS::ApiGateway::RestApi',
-        'AWS::ApiGateway::Method'
+        'AWS::ApiGateway::Method',
+        'AWS::SNS::Topic',
+        'AWS::IAM::Role',
+        'AWS::IAM::Policy'
       ],
     });
 
@@ -196,6 +206,8 @@ export class IntelligentCaptchaStack extends SolutionStack {
       fifo: false,
       topicName: 'captchaGeneratingResultTopic',
     });
+
+    captcha_generating_result_topic.addSubscription(new subscriptions.EmailSubscription(notifyEmail.valueAsString));
 
     //Offline Captcha generator stack which contains step-function workflow
     const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {

@@ -41,8 +41,6 @@ class Captcha_Compositor():
         else:
             raise Exception('Only support b=black, w=white, and g=gray back ground color options. ')
 
-        # TODO: set the random variables for the visible bar noises
-
     def generate_captcha(self, cn_algorithm_str=None, is_display=False):
 
         bk_img = self._gen_background()
@@ -51,11 +49,15 @@ class Captcha_Compositor():
 
         captcha_img = self._add_bar_noise(basic_img, right_edge)
 
+        right_bound = self._find_right_bound(captcha_img)
+
+        crop_captcha_img = captcha_img.crop((0, 0, right_bound, self.height))
+
         if is_display:
-            plt.imshow(captcha_img)
+            plt.imshow(crop_captcha_img)
             plt.show()
 
-        return captcha_img
+        return crop_captcha_img
 
     def _gen_background(self):
         # bk_img = Image.effect_noise((self.width, self.height), sigma=1.)
@@ -98,6 +100,17 @@ class Captcha_Compositor():
             img_draw.line([(X_0, Y_0), (X_1, Y_1)], fill='white', width=width)
 
         return  basic_img
+
+    def _find_right_bound(self, img):
+        """
+        Find the right bound of the captcha texts and noise, and return the right bound plus 5 pixels.
+        """
+        arr = np.array(img)
+        arr_sum = arr.sum(axis=(0, 2))
+
+        right_bound = (arr_sum > 0).nonzero()[0][-1]
+
+        return right_bound + 5
 
     def _pick_one_img(self, img_path):
         imgs = os.listdir(img_path)

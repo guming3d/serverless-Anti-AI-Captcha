@@ -61,7 +61,7 @@ def train(args):
             logits = model(img)
 
             tr_loss = loss_fn(logits, labels)
-            tr_acc = (th.argmax(logits, dim=-1) == labels).sum() / labels.shape[0]
+            tr_acc = (th.argmax(logits, dim=-1) == labels).sum() / (labels.shape[0] * 1.0)
 
             optim.zero_grad()
             tr_loss.backward()

@@ -34,15 +34,17 @@ COPY container.d/generate-captcha-data/requirements.txt  /app/
 COPY container.d/generate-captcha-data/utils.py  /app/
 COPY container.d/generate-captcha-data/captcha-calling-wrapper.py  /app/
 COPY container.d/generate-captcha-data/upload-to-S3-ddb.sh  /app/
+COPY container.d/generate-captcha-data/data/captcha_images/  /app/data/captcha_images/
 
-RUN cd /app && pip install -r requirements.txt -i https://opentuna.cn/pypi/web/simple
-
+RUN cd /app && pip install -r requirements.txt
 RUN mkdir -p /app/data/
 RUN mkdir -p /app/data/adv_char_images
 RUN mkdir -p /app/data/captcha_images
 RUN mkdir -p /app/data/raw_char_images
 RUN mkdir -p /app/data/trained_models
 
+COPY container.d/generate-captcha-data/data/captcha_images /app/data/captcha_images
 
-ENTRYPOINT ["python", "/app/captcha-calling-wrapper.py"]
+
+#ENTRYPOINT ["python", "/app/captcha_main.py"]
 

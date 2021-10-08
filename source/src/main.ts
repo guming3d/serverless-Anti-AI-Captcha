@@ -4,8 +4,20 @@ import { IntelligentCaptchaStack } from './stack';
 
 const app = new App();
 
-const envBJS = { account: '812669741844', region: 'cn-north-1' };
-new IntelligentCaptchaStack(app, 'IntelligentCaptchaStack', { synthesizer: newSynthesizer(), env:envBJS });
+const vpcId = app.node.tryGetContext('vpcId');
+const env = vpcId ? {
+  account: process.env.CDK_DEFAULT_ACCOUNT,
+  region: process.env.CDK_DEFAULT_REGION,
+} : undefined;
+
+new IntelligentCaptchaStack(app, 'IntelligentCaptchaStack', {
+  env: env,
+  synthesizer: newSynthesizer(),
+  tags: {
+    app: 'intelligent-captcha',
+  },
+
+});
 
 app.synth();
 

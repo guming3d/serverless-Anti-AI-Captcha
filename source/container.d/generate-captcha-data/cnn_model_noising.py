@@ -91,7 +91,7 @@ def noising(args, is_display=False, is_save=True):
         label_list.append(ori_label)
 
         if ((i + 1) % 10) == 0:
-            print('Noising and saving {} char images ...'.format(i))
+            # print('Noising and saving {} char images ...'.format(i))
             if is_save:
                 save_advimg(args.adv_char_images_path, advimg_list, label_list)
 

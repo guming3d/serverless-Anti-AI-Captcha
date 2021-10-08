@@ -38,10 +38,10 @@ main() {
   echo "target s3 path is ${targetS3Path}"
   echo "target s3 http path is ${targetS3HttpPath}"
   #first delete all the existing files
-  aws s3 rm --recursive ${targetS3Path}
+  aws s3 rm --recursive ${targetS3Path} --only-show-errors
 
   #upload the captcha png files
-  aws s3 cp ${captchaImageDirectory} ${targetS3Path} --recursive --acl public-read --exclude "*" --include "*.png"
+  aws s3 cp ${captchaImageDirectory} ${targetS3Path} --recursive --acl public-read --exclude "*" --include "*.png" --only-show-errors
 
   #Generating DDB from the s3 captcha file, using batch-write to increase the performance
   j=0
@@ -53,9 +53,9 @@ main() {
   do
       resultFileName=`echo $item|awk -F. '{print $1}'`
       result=`cat ${captchaImageDirectory}${resultFileName}.txt`
-      echo "result of $item is $result"
+#      echo "result of $item is $result"
       tmp=$((j%20))
-      echo "tmp is $tmp"
+#      echo "tmp is $tmp"
       if [[ $tmp -eq 19 ]]; then
         #use batch write to ddb
         echo "{ \
@@ -101,7 +101,7 @@ main() {
          tmp=$((tmp+1))
       fi
       j=$((j+1));
-      echo $j
+#      echo $j
   done
 
   # send the record to dynamodb
@@ -119,7 +119,9 @@ main() {
 #                sleepTime=$((sleepTime * 2)) #increase the sleep time for exponential backoff
 #            done
 #    done
-   ls -1 ${TMPPATH}|parallel --ungroup --jobs 40 -I% --max-args 1 aws dynamodb batch-write-item --request-items file://${TMPPATH}/%
+   echo "start send the data to dynamodb"
+   ls -1 ${TMPPATH}|parallel --ungroup --jobs 4 -I% --max-args 1 aws dynamodb batch-write-item --request-items file://${TMPPATH}/% >/dev/null
+   echo "finished send the data to dynamodb"
 }
 
 # deletes the temp directory

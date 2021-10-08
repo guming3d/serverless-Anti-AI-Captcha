@@ -76,10 +76,18 @@ export class IntelligentCaptchaStack extends SolutionStack {
     })
 
     const notifyEmail = new CfnParameter(this, 'notifyEmail', {
-      description: 'enter the email address to be notified about captcha generating status',
+      description: 'enter the email address to be notified about captcha generating status, eg: xxx@qq.com',
       type: 'String',
       default: '',
     })
+
+    const captchaGenerateHour = new CfnParameter(this, 'captchaGenerateHour', {
+      description: 'enter the hour of day in UTC to start generating captcha images, from 0 to 23, default is 8 which is 16:00 of Beijing time',
+      type: 'Number',
+      default: '8',
+      allowedValues: ['0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23']
+    })
+
 
     cdk.Tags.of(this).add('stage', deployStage.valueAsString,{
       includeResourceTypes: [
@@ -147,7 +155,7 @@ export class IntelligentCaptchaStack extends SolutionStack {
     const captcha_index_table = new dynamodb.Table(this, 'Captcha_index', {
       billingMode: dynamodb.BillingMode.PROVISIONED,
       readCapacity: 100,
-      writeCapacity: 10,
+      writeCapacity: 100,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       partitionKey: {name: 'captcha_date', type: dynamodb.AttributeType.STRING},
       sortKey: {name: 'captcha_index', type: dynamodb.AttributeType.NUMBER},
@@ -155,16 +163,16 @@ export class IntelligentCaptchaStack extends SolutionStack {
       timeToLiveAttribute: 'ExpirationTime'
     });
 
-    // configure auto scaling on table
-    const writeAutoScaling = captcha_index_table.autoScaleWriteCapacity({
-      minCapacity: 10,
-      maxCapacity: 3000,
-    });
-
-    // scale up when write capacity hits 75%
-    writeAutoScaling.scaleOnUtilization({
-      targetUtilizationPercent: 75,
-    });
+    // // configure auto scaling on table
+    // const writeAutoScaling = captcha_index_table.autoScaleWriteCapacity({
+    //   minCapacity: 10,
+    //   maxCapacity: 3000,
+    // });
+    //
+    // // scale up when write capacity hits 75%
+    // writeAutoScaling.scaleOnUtilization({
+    //   targetUtilizationPercent: 75,
+    // });
 
     const readAutoScaling = captcha_index_table.autoScaleReadCapacity({
       minCapacity: 100,
@@ -207,7 +215,9 @@ export class IntelligentCaptchaStack extends SolutionStack {
       topicName: 'captchaGeneratingResultTopic',
     });
 
-    captcha_generating_result_topic.addSubscription(new subscriptions.EmailSubscription(notifyEmail.valueAsString));
+    if (notifyEmail.valueAsString != ''){
+      captcha_generating_result_topic.addSubscription(new subscriptions.EmailSubscription(notifyEmail.valueAsString));
+    }
 
     //Offline Captcha generator stack which contains step-function workflow
     const captchaGeneratorStack = new CaptchaGeneratorStack(this, 'CaptchaGenerator', {
@@ -215,7 +225,8 @@ export class IntelligentCaptchaStack extends SolutionStack {
       ddb_name : captcha_index_table.tableName,
       captcha_number : maxDailyIndex.valueAsString,
       captcha_s3_bucket : captcha_s3_bucket.bucketName,
-      captcha_generate_result_sns_arn : captcha_generating_result_topic.topicArn
+      captcha_generate_result_sns_arn : captcha_generating_result_topic.topicArn,
+      captcha_generate_start_hour: captchaGenerateHour.valueAsString
       }
     );
 

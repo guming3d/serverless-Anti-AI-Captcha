@@ -19,7 +19,7 @@ exports.failureHandler = function (event, context, callback) {
     TableName: DDB_TABLE_NAME,
     ProvisionedThroughput: {
       WriteCapacityUnits: 5,
-      ReadCapacityUnits: 200
+      ReadCapacityUnits: 50
     },
   };
 

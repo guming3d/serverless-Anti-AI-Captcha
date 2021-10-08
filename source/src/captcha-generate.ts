@@ -23,7 +23,8 @@ export interface CaptchaGeneratorStackProps extends NestedStackProps {
   readonly ddb_name: string,
   readonly captcha_number: string,
   readonly captcha_s3_bucket: string,
-  readonly captcha_generate_result_sns_arn: string
+  readonly captcha_generate_result_sns_arn: string,
+  readonly captcha_generate_start_hour: string
 }
 
 export class CaptchaGeneratorStack extends NestedStack {
@@ -38,6 +39,7 @@ export class CaptchaGeneratorStack extends NestedStack {
     const s3_bucket_name = props.captcha_s3_bucket
     const vpc = props.inputVPC
     const sns_topic_arn = props.captcha_generate_result_sns_arn
+    const captcha_generate_hour = props.captcha_generate_start_hour
 
     // create states of step functions for pipeline
     const failure = new sfn.Fail(this, 'Fail', {
@@ -250,7 +252,7 @@ export class CaptchaGeneratorStack extends NestedStack {
 
     //eventBridge to trigger the captcha generating step-function daily at 16:00 China localtime(8:00 UTC time)
     new Rule(this, 'CaptchaSchedulingRule', {
-      schedule: Schedule.cron({minute: '0', hour: '8'}),
+      schedule: Schedule.cron({minute: '0', hour: captcha_generate_hour}),
       targets: [new SfnStateMachine(captchaStateMachine)],
     });
 

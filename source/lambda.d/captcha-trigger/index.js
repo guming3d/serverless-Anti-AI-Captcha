@@ -21,17 +21,17 @@ exports.triggerHandler = function (event, context, callback) {
   let params = {
     TableName: ddbtablename,
     ProvisionedThroughput: {
-      WriteCapacityUnits: 5000,
-      ReadCapacityUnits: 200
+      WriteCapacityUnits: 50,
+      ReadCapacityUnits: 50
     },
   };
 
   ddb.updateTable(params, function (err, data) {
     if (err) {
       console.error(err, err.stack);
-      callback(Error("failed to update the write capacity unit of dynamodb to 2000"));
+      callback(Error("failed to update the write capacity unit of dynamodb to 5000"));
     } // an error occurred
-      else console.debug("Succeed update the write capacity unit to 2000");           // successful response
+      else console.debug("Succeed update the write capacity unit to 5000");           // successful response
   });
 
   const parameters = {

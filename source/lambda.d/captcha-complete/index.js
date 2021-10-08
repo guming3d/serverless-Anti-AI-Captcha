@@ -20,7 +20,7 @@ exports.completeHandler = function (event, context, callback) {
     TableName: ddbtablename,
     ProvisionedThroughput: {
       WriteCapacityUnits: 5,
-      ReadCapacityUnits: 200
+      ReadCapacityUnits: 50
     },
   };
 

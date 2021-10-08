@@ -113,9 +113,10 @@ def main(args):
         save_captcha(captcha_img, cn_formula_str, answer, args.captcha_images_path, args.key)
 
         # Step 5 output logs
-        if (num + 1) % 100 == 0:
-            print('Generate {} captcha images ...'.format(num))
+        # if (num + 1) % 100 == 0:
+        #     print('Generate {} captcha images ...'.format(num))
 
+    print('Finished generate all captcha images!!!')
 
 if __name__ == '__main__':
     parse = argparse.ArgumentParser('Arithmetic formula-based captcha generation program')

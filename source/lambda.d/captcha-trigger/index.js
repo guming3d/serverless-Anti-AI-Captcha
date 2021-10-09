@@ -37,6 +37,7 @@ exports.triggerHandler = function (event, context, callback) {
   const parameters = {
     parameters: {
       captchaGeneratingJob: {},
+      target_date: '20211020'
     },
   };
   callback(null,parameters);

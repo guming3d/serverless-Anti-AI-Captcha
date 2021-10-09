@@ -20,12 +20,16 @@ ddbName = environ['CAPTCHA_DDB_NAME']
 captchaNumber = environ['CAPTCHA_NUMBER']
 region = environ['REGION_NAME']
 s3BucketName = environ['S3_BUCKET_NAME']
+target_date = environ['TARGET_DATE']
 
 logger.debug("Prepared captcha data for bulk load...")
 logger.debug("DDB table name is "+ddbName)
 logger.debug("Captcha number is "+captchaNumber)
 logger.debug("region name is "+region)
 logger.debug("s3 bucket name is "+s3BucketName)
+
+logger.debug("target date is  "+target_date)
+print("target date is "+target_date)
 
 currentDate = datetime.date.today().strftime("%Y/%m/%d/")
 logger.info("today is "+currentDate)
@@ -42,7 +46,9 @@ dataArgs = [
             '--num_captcha_image',
             captchaNumber,
             '--is_regenerate_char',
-            '1'
+            '0',
+            '--external_adv_images_path',
+            '/app/data/adv_char_images/'
             ]
 
 subprocess.check_call(list(dataArgs))

@@ -63,7 +63,7 @@ export class CaptchaGeneratorStack extends NestedStack {
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'CaptchaGeneratingTask', {
       memoryLimitMiB: 8192,
-      cpu: 2048,
+      cpu: 4096,
     });
 
     const dailyCaptchaGeneratorImage = new DockerImageAsset(this, 'DailyCaptchaGeneratingImage', {
@@ -91,7 +91,7 @@ export class CaptchaGeneratorStack extends NestedStack {
 
     const containerDefinition = taskDefinition.addContainer('TheCaptchaGeneratingContainer', {
       image: ContainerImage.fromDockerImageAsset(dailyCaptchaGeneratorImage),
-      cpu: 2048,
+      cpu: 4096,
       memoryLimitMiB: 8192,
       memoryReservationMiB: 8192,
       logging: ecs.LogDriver.awsLogs({
@@ -106,7 +106,8 @@ export class CaptchaGeneratorStack extends NestedStack {
           CAPTCHA_DDB_NAME: ddbName,
           CAPTCHA_NUMBER: captchaNumber,
           REGION_NAME: Aws.REGION,
-          S3_BUCKET_NAME: s3_bucket_name
+          S3_BUCKET_NAME: s3_bucket_name,
+          TARGET_DATE: '$.payload.target_date'
         },
     });
 
@@ -226,6 +227,7 @@ export class CaptchaGeneratorStack extends NestedStack {
       assignPublicIp: true,
       containerOverrides: [{
         containerDefinition: containerDefinition,
+
       }],
       launchTarget: new EcsFargateLaunchTarget({
         platformVersion: FargatePlatformVersion.VERSION1_4,

@@ -46,9 +46,7 @@ dataArgs = [
             '--num_captcha_image',
             captchaNumber,
             '--is_regenerate_char',
-            '0',
-            '--external_adv_images_path',
-            '/app/data/adv_char_images/'
+            '1'
             ]
 
 subprocess.check_call(list(dataArgs))

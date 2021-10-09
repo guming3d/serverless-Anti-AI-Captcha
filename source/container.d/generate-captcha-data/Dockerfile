@@ -43,8 +43,4 @@ RUN mkdir -p /app/data/captcha_images
 RUN mkdir -p /app/data/raw_char_images
 RUN mkdir -p /app/data/trained_models
 
-COPY container.d/generate-captcha-data/data/adv_char_images  /app/data/adv_char_images
-
-
 ENTRYPOINT ["python", "/app/captcha-calling-wrapper.py"]
-

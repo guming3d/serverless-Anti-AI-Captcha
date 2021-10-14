@@ -11,9 +11,6 @@ It is only wrapper to call captcha_main.py to generate the captcha png files
 and call upload-to-S3-ddb.sh to upload the generated captcha files to S3 and
 inserted to ddb
 """
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
 parser = argparse.ArgumentParser(description='Bulk load captcha data to S3 and DynamoDB.')
 
 ddbName = environ['CAPTCHA_DDB_NAME']
@@ -22,17 +19,14 @@ region = environ['REGION_NAME']
 s3BucketName = environ['S3_BUCKET_NAME']
 target_date = environ['TARGET_DATE']
 
-logger.debug("Prepared captcha data for bulk load...")
-logger.debug("DDB table name is "+ddbName)
-logger.debug("Captcha number is "+captchaNumber)
-logger.debug("region name is "+region)
-logger.debug("s3 bucket name is "+s3BucketName)
-
-logger.debug("target date is  "+target_date)
+print("Prepared captcha data for bulk load...")
+print("DDB table name is "+ddbName)
+print("Captcha number is "+captchaNumber)
+print("region name is "+region)
+print("s3 bucket name is "+s3BucketName)
 print("target date is "+target_date)
 
-currentDate = datetime.date.today().strftime("%Y/%m/%d/")
-logger.info("today is "+currentDate)
+currentDate = target_date
 
 dataArgs = [
             'python',

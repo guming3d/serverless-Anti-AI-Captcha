@@ -15,14 +15,30 @@ main() {
   local regionName=$5
   local captchaImageDirectory=$6
 
-  TOMORROW_DATE=$(date --date="next day" '+%Y%m%d')
-  YEAR=$(date --date="next day" '+%Y')
-  MONTH=$(date --date="next day" '+%m')
-  DAY=$(date --date="next day" '+%d')
-  S3_PREFIX="${YEAR}/${MONTH}/${DAY}/"
+  echo "input date is ${currentDate}"
+  if [ "${currentDate}" != "" ]; then
+     #use the input date to calculate the target captcha s3 path
+     echo "use target date ${currentDate} to generate captcha"
+     TOMORROW_DATE=$(date --date="${currentDate}" '+%Y%m%d')
+     YEAR=$(date --date="${currentDate}" '+%Y')
+     MONTH=$(date --date="${currentDate}" '+%m')
+     DAY=$(date --date="${currentDate}" '+%d')
+     S3_PREFIX="${YEAR}/${MONTH}/${DAY}/"
 
-  EPOCH_TOMORROW=$(date --date="next day" '+%s')
-  EPOCH_EXPIRE_DATE=$((EPOCH_TOMORROW + 604800))
+     EPOCH_TOMORROW=$(date --date="${currentDate}" '+%s')
+     EPOCH_EXPIRE_DATE=$((EPOCH_TOMORROW + 604800))
+  else
+    #generate the captcha for tomorrow
+     echo "use tomorrow date to generate captcha"
+    TOMORROW_DATE=$(date --date="next day" '+%Y%m%d')
+    YEAR=$(date --date="next day" '+%Y')
+    MONTH=$(date --date="next day" '+%m')
+    DAY=$(date --date="next day" '+%d')
+    S3_PREFIX="${YEAR}/${MONTH}/${DAY}/"
+
+    EPOCH_TOMORROW=$(date --date="next day" '+%s')
+    EPOCH_EXPIRE_DATE=$((EPOCH_TOMORROW + 604800))
+  fi
 
 
   trap cleanup EXIT

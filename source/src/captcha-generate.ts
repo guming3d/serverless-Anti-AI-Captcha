@@ -3,7 +3,7 @@ import {ContainerImage, FargatePlatformVersion} from '@aws-cdk/aws-ecs';
 import * as tasks from '@aws-cdk/aws-stepfunctions-tasks'
 import {EcsFargateLaunchTarget, LambdaInvoke} from '@aws-cdk/aws-stepfunctions-tasks'
 import * as sfn from '@aws-cdk/aws-stepfunctions'
-import {Errors, IntegrationPattern, LogLevel, StateMachine} from '@aws-cdk/aws-stepfunctions'
+import {Errors, IntegrationPattern, LogLevel, StateMachine, TaskInput} from '@aws-cdk/aws-stepfunctions'
 import * as cdk from "@aws-cdk/core";
 import {Aws, Construct, Duration, IgnoreMode, NestedStack, NestedStackProps} from "@aws-cdk/core";
 import {DockerImageAsset} from "@aws-cdk/aws-ecr-assets";
@@ -107,7 +107,6 @@ export class CaptchaGeneratorStack extends NestedStack {
           CAPTCHA_NUMBER: captchaNumber,
           REGION_NAME: Aws.REGION,
           S3_BUCKET_NAME: s3_bucket_name,
-          TARGET_DATE: '$.payload.target_date'
         },
     });
 
@@ -184,6 +183,7 @@ export class CaptchaGeneratorStack extends NestedStack {
     }(this, 'trigger captcha generating', {
       lambdaFunction: triggerFunction,
       integrationPattern: IntegrationPattern.REQUEST_RESPONSE,
+      resultPath: '$.input',
     }).addCatch(captchaProducerFailTask, {
       errors: [Errors.ALL],
       resultPath: '$.error',
@@ -227,7 +227,12 @@ export class CaptchaGeneratorStack extends NestedStack {
       assignPublicIp: true,
       containerOverrides: [{
         containerDefinition: containerDefinition,
-
+        environment: [
+          {
+            name: 'TARGET_DATE',
+            value: TaskInput.fromJsonPathAt('$.input.parameters.target_date').value,
+          }
+        ],
       }],
       launchTarget: new EcsFargateLaunchTarget({
         platformVersion: FargatePlatformVersion.VERSION1_4,

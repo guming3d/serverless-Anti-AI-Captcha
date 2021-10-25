@@ -9,7 +9,7 @@ This solution contains two part, online part to serve the http request to get th
 ##Main features
 1. generate specified number of captchas daily, the number of captcha images can be specified in cloudformation parameter.
 2. serverless architecture to provide captcha api, the captcha images are saved in s3 and url and result value is saved in DynamoDB.
-3. user can rerun the captcha generation workflow and specify the target date, if user does not specify the captcha target date, workflow will use current day to generate the captcha.
+3. user can rerun the captcha generation workflow and specify the target date, if user does not specify the captcha target date, workflow will use next day to generate the captcha.
 4. The captcha image are simple Math calulation problems but transfered to Chinese charactors. Also the Chinese characters are all adding Machine learning generated noise to adding difficulty for Bot program to identify the charactors. Also we are adding some random lines in the captcha images to adding the chaotics.
 
 ##Example response

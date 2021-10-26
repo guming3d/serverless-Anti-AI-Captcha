@@ -33,17 +33,28 @@ This solution contains two part, online part to serve the http request to get th
 }
 ```
 
+##Supported parameters when deploy
+| Parameter Name| Description | Default Value |
+|----------|----------|----------|
+| MaxDailyCaptchaNumber | Number of Captcha images generate daily | 100 |
+| MaxCaptchaKeepDays | Number of days to keep the captcha images, the dynamoDB and S3 captcha files will be deleted after the specified days which will save cost | 7 |
+| deployStage | the name of the deployment stage('dev','beta','gamma','preprod','prod'), this parameter is created to support deploy multiple env in same aws account | "prod" |
+| notifyEmail | the email address which will be notified by sns about the captcha generating result, eg: testing@amazon.com | "" |
+| captchaGenerateHour | enter the hour of day in UTC to start generating captcha images daily, from 0 to 23, default is 8 which is 16:00 of Beijing time | 8 |
 
 ## How to use?
+### Prerequest
+This solution request VPC to run, if user want to deploy this solution to existing VPC, please use "-c vpcId=vpc-VPCIDXXXXX" in cdk deploy command to specify  VPC id, if not specify VPC, the deployment process will try to create a new VPC.
 
+###How to deploy
 First use "aws configure" to update the aws credentials then type following commands
 ```shell
 $ cd source
 $ npm i
 $ npx cdk synthesize
-$ npx cdk deploy --parameters MaxDailyCaptchaNumber=1000 -c vpcId=vpc-9761e3fe
-
+$ npx cdk deploy --parameters MaxDailyCaptchaNumber=1000 -c vpcId=vpc-VPCIDXXXXX --parameters notifyEmail=xxxxx@email.com
 ```
+
 
 ## How to cdk synth/diff/deploy?
 
@@ -72,3 +83,17 @@ $ npm run bump -- --dry-run --release-as 1.1.0
 $ # push tag to remote
 $ git push origin v1.1.0
 ```
+
+## How to manually trigger the captcha generating workflow
+1. Login to the aws step-function console.
+2. Find the captcha generating workflow, for example:
+   ![Alt Text](docs/images/step-function_console.png)
+3. Click the "Start execution" Button, for example:
+   ![Alt Text](docs/images/step-function_console_start_execution.png)
+4. Replace the Input with following content, change the value of "target_date" to specified date
+```json
+{
+    "target_date": "20211022"
+}
+```
+   ![Alt Text](docs/images/step-function_console_trigger_workflow_option.png)

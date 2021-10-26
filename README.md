@@ -33,6 +33,11 @@ This solution contains two part, online part to serve the http request to get th
 }
 ```
 
+##Captcha image example
+![Alt Text](docs/images/captcha_example.png)
+
+The result of this captcha should be 200 which can be calculated by (100 + 50) + 50 = 200
+
 ##Supported parameters when deploy
 | Parameter Name| Description | Default Value |
 |----------|----------|----------|

@@ -4,7 +4,7 @@
 This solution contains two part, online part to serve the http request to get the capcha image url and corrisponding result through the api gateway and lambda function, offline part is a step-function workflow to use a daily fargate task to generate customized number of captcha images in s3 and save the captcha image url and result in dynamoDB.
 
 ##Architecture
-![Alt Text](docs/images/Anti-Bot%20Captcha-Realtime-repeat.png)
+![Architecture image](docs/images/Anti-Bot%20Captcha-Realtime-repeat.png)
 
 ##Main features
 1. generate specified number of captchas daily, the number of captcha images can be specified in cloudformation parameter.
@@ -34,7 +34,7 @@ This solution contains two part, online part to serve the http request to get th
 ```
 
 ##Captcha image example
-![Alt Text](docs/images/captcha_example.png)
+![captcha example](docs/images/captcha_example.png)
 
 The result of this captcha should be 200 which can be calculated by (100 + 50) + 50 = 200
 
@@ -92,13 +92,13 @@ $ git push origin v1.1.0
 ## How to manually trigger the captcha generating workflow
 1. Login to the aws step-function console.
 2. Find the captcha generating workflow, for example:
-   ![Alt Text](docs/images/step-function_console.png)
+   ![step-function console](docs/images/step-function_console.png)
 3. Click the "Start execution" Button, for example:
-   ![Alt Text](docs/images/step-function_console_start_execution.png)
+   ![start step-function execution](docs/images/step-function_console_start_execution.png)
 4. Replace the Input with following content, change the value of "target_date" to specified date
 ```json
 {
     "target_date": "20211022"
 }
 ```
-   ![Alt Text](docs/images/step-function_console_trigger_workflow_option.png)
+   ![step-function workflow option](docs/images/step-function_console_trigger_workflow_option.png)

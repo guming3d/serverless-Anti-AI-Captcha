@@ -9,8 +9,8 @@ import numpy as np
 import torch as th
 import matplotlib
 from PIL import Image
-import matplotlib.pyplot as plt
-matplotlib.rcParams['font.family'] = ['Baoli SC']
+# import matplotlib.pyplot as plt
+# matplotlib.rcParams['font.family'] = ['Baoli SC']
 
 from torch.utils.data import DataLoader
 from deeprobust.image.attack.deepfool import DeepFool
@@ -136,30 +136,30 @@ def save_advimg(save_path, img_list, label_list):
         img.save(file_name, 'PNG')
 
 
-def display_images(ori_img, ori_label, adv_img, adv_label):
-    # reverse channel from 1st to the last
-    ori_img = ori_img.transpose(1, 2, 0)
-    adv_img = adv_img.transpose(1, 2, 0)
-
-    # below operation is only work for 1 channel gray images
-    # ori_img = np.concatenate([ori_img, ori_img, ori_img], axis=-1)
-    # adv_img = np.concatenate([adv_img, adv_img, adv_img], axis=-1)
-
-    plt.rc('font', size=16)
-
-    # set suplot grid
-    plt.subplot(1, 2, 1)
-    plt.imshow(ori_img)
-    plt.xlabel('True label: {}'.format(ori_label))
-    plt.subplot(1, 2, 2)
-    plt.imshow(adv_img)
-    plt.xlabel('Adv label: {}'.format(adv_label))
-
-    dif = (ori_img - adv_img) ** 2
-    sqe = np.sqrt(dif).sum()
-    plt.suptitle('MSE of ori vs adv: {:4f}'.format(sqe))
-
-    plt.show()
+# def display_images(ori_img, ori_label, adv_img, adv_label):
+#     # reverse channel from 1st to the last
+#     ori_img = ori_img.transpose(1, 2, 0)
+#     adv_img = adv_img.transpose(1, 2, 0)
+#
+#     # below operation is only work for 1 channel gray images
+#     # ori_img = np.concatenate([ori_img, ori_img, ori_img], axis=-1)
+#     # adv_img = np.concatenate([adv_img, adv_img, adv_img], axis=-1)
+#
+#     plt.rc('font', size=16)
+#
+#     # set suplot grid
+#     plt.subplot(1, 2, 1)
+#     plt.imshow(ori_img)
+#     plt.xlabel('True label: {}'.format(ori_label))
+#     plt.subplot(1, 2, 2)
+#     plt.imshow(adv_img)
+#     plt.xlabel('Adv label: {}'.format(adv_label))
+#
+#     dif = (ori_img - adv_img) ** 2
+#     sqe = np.sqrt(dif).sum()
+#     plt.suptitle('MSE of ori vs adv: {:4f}'.format(sqe))
+#
+#     plt.show()
 
 
 # if __name__ == '__main__':

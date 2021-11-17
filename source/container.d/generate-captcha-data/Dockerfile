@@ -1,9 +1,10 @@
-FROM pytorch/pytorch:1.9.0-cuda10.2-cudnn7-devel
+FROM pytorch/pytorch:1.7.1-cuda11.0-cudnn8-runtime
 
 WORKDIR /app
 
 #RUN yum install -y tar gzip unzip openssl awk
 RUN apt-get update
+RUN apt-get install -y build-essential
 RUN apt-get install -y --no-install-recommends tar
 RUN apt-get install -y --no-install-recommends curl
 RUN apt-get install -y --no-install-recommends gzip

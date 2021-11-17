@@ -92,13 +92,16 @@ $ git push origin v1.1.0
 ## How to manually trigger the captcha generating workflow
 1. Login to the aws step-function console.
 2. Find the captcha generating workflow, for example:
+
    ![step-function console](docs/images/step-function_console.png)
 3. Click the "Start execution" Button, for example:
+
    ![start step-function execution](docs/images/step-function_console_start_execution.png)
-4. Replace the Input with following content, change the value of "target_date" to specified date
+5. Replace the Input with following content, change the value of "target_date" to specified date
 ```json
 {
     "target_date": "20211022"
 }
 ```
+
    ![step-function workflow option](docs/images/step-function_console_trigger_workflow_option.png)

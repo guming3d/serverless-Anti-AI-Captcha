@@ -163,17 +163,6 @@ export class IntelligentCaptchaStack extends SolutionStack {
       timeToLiveAttribute: 'ExpirationTime'
     });
 
-    // // configure auto scaling on table
-    // const writeAutoScaling = captcha_index_table.autoScaleWriteCapacity({
-    //   minCapacity: 10,
-    //   maxCapacity: 3000,
-    // });
-    //
-    // // scale up when write capacity hits 75%
-    // writeAutoScaling.scaleOnUtilization({
-    //   targetUtilizationPercent: 75,
-    // });
-
     const readAutoScaling = captcha_index_table.autoScaleReadCapacity({
       minCapacity: 100,
       maxCapacity: 3000
